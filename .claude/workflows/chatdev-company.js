@@ -11,9 +11,19 @@ export const meta = {
 }
 
 // ---------------------------------------------------------------------------
+// Normalize args. The Workflow tool may deliver `args` as a real object OR as a
+// JSON string (in which case args.X would be undefined and every option would
+// silently default). Parse defensively so callers can pass either form.
+// ---------------------------------------------------------------------------
+let A = args
+if (typeof A === 'string') { try { A = JSON.parse(A) } catch (e) { A = {} } }
+A = (A && typeof A === 'object') ? A : {}
+log('args received: type=' + (typeof args) + ' normalized=' + JSON.stringify(A))
+
+// ---------------------------------------------------------------------------
 // Target + product prompt. args overrides; default = the demo todo-CLI target.
 // ---------------------------------------------------------------------------
-const target = (args && args.target) || './demo'
+const target = A.target || './demo'
 const DEFAULT_PROMPT = [
   'Build a small command-line TODO application in Python (a package named `todo` in the target dir).',
   '',
@@ -32,19 +42,19 @@ const DEFAULT_PROMPT = [
   "(data survives a reload). Tests must be isolated and deterministic using pytest's tmp_path — never touching a real todos.json.",
   'If you test the CLI via subprocess, invoke it with `sys.executable` (so it runs under the same interpreter as pytest).',
 ].join('\n')
-const productPrompt = (args && args.prompt) || DEFAULT_PROMPT
+const productPrompt = A.prompt || DEFAULT_PROMPT
 
 // Incremental mode (ChatDev `incremental_develop: True`): EXTEND an existing codebase in `target`
 // rather than scaffolding from scratch (ChatDev drops the from-scratch Coding phase in this mode).
 // Triggered by args.incremental; the work item is args.change (the feature/fix to add), falling
 // back to args.prompt. The whole suite (existing + new) must stay green.
-const incremental = !!(args && args.incremental)
-const changeRequest = (args && args.change) || (args && args.prompt) ||
+const incremental = !!A.incremental
+const changeRequest = A.change || A.prompt ||
   'Review the existing code and extend it with a sensible, well-tested improvement.'
 
 // Repo-local venv python (has pytest). Tests run under this interpreter; CLI subprocess
 // tests should use sys.executable so they inherit it. Override via args.pybin if needed.
-const PYBIN = (args && args.pybin) || '/Users/hassiba/git/chatdev_harness/.venv/bin/python'
+const PYBIN = A.pybin || '/Users/hassiba/git/chatdev_harness/.venv/bin/python'
 const PYTEST = 'cd ' + target + ' && ' + PYBIN + ' -m pytest -q'
 
 // ---------------------------------------------------------------------------
