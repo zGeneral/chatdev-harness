@@ -56,10 +56,13 @@ ChatDev's pipeline presets (`CompanyConfig/`) are implemented here as **modes of
 | **Default** | Autonomous spec → build → review → test. | `/build-company "<idea>"` |
 | **Incremental** | Extend an **existing** tested codebase (new + existing tests stay green). | `/extend-company "<change>"` |
 | **Human** | A **human** reviews and gives feedback (≤5 rounds) before the test gate; interactive. | `/build-company-human "<idea>"` |
-| **Art** | _Not yet ported_ — would wire image generation for GUI assets. | — |
+| **GameDev** | A real **Pygame** game (port of ChatDev 2.0's `GameDev_with_manager.yaml`): GDD → core → polish → QA → run. Success = pure-logic `pytest` green **and** a headless launch runs clean. | `/build-game "<idea>"` |
+| **Art** | _Not yet ported_ — would wire image generation (e.g. nanobanana) for GUI assets. | — |
 
-> ChatDev has no separate "gamedev company" — its games (2048, Gomoku, …) are example outputs of the
-> Default pipeline on a game prompt. Build one the same way; just keep the game *logic* pytest-testable.
+> ChatDev 1.0's presets are general; its 2.0 branch adds a `yaml_instance/` library of ~40 YAML-graph
+> workflows — including the GameDev one ported here. Others (Blender 3D, Manim video, data-viz,
+> deep-research) need capabilities beyond Python+pytest. Games here keep *logic* in a pygame-free,
+> pytest-tested module; `game.py` is the renderer with a headless smoke mode.
 
 ## Repo layout
 

@@ -93,12 +93,14 @@ implements them as **modes of the one engine**, not separate companies:
 | **Default** | The autonomous pipeline (spec → build → review → test). | `/build-company` or the Workflow with no mode flag. |
 | **Incremental** (`incremental_develop`) | Extend an EXISTING tested codebase instead of scaffolding from scratch; new + existing tests must stay green. | `/extend-company <change>` or `args: { incremental: true, change: "...", target: <existing dir> }`. |
 | **Human** (`HumanAgentInteraction`) | After the automated review, a **human** reviews and gives feedback (≤5 rounds) before the test gate. Runs as an interactive, main-agent-driven flow (a background Workflow can't pause for human turns) using the role agents + `AskUserQuestion`. | `/build-company-human [prompt]`. |
-| **Art** | Not yet ported — would wire an image-gen step (e.g. the `nanobanana` skill) to produce GUI assets. | — |
+| **GameDev** (2.0 `GameDev_with_manager.yaml`) | Game factory: GDD → core (Phase 1) → polish (Phase 2) → QA → run. Builds a real **Pygame** game; success = pure-logic `pytest` green **and** a headless smoke-run launches clean. Separate workflow `chatdev-gamedev.js`. | `/build-game [idea]`. |
+| **Art** | Not yet ported — would wire an image-gen step (the `nanobanana` skill) to produce GUI assets. | — |
 
-Note: ChatDev has no per-domain "gamedev company" — its games (2048, Gomoku, …) are example
-WareHouse *outputs* of the Default (or Human) pipeline run on a game prompt. Build one here the same
-way: `/build-company "<game idea with testable logic>"`. The success signal is `pytest` green, so
-keep game *logic* testable (separate from rendering).
+Note on ChatDev's two generations: the **1.0** `CompanyConfig/` presets are general (its famous games
+like 2048/Gomoku were Default-pipeline *outputs*, not a preset). But **2.0** (the repo's current branch)
+has a `yaml_instance/` directory of ~40 YAML-graph workflows, including a dedicated **GameDev** one
+(ported here) plus others (data-viz, Blender 3D, deep-research, video) that would need capabilities
+beyond Python+pytest. Games here keep *logic* in a pygame-free module so it stays testable.
 
 ## Working in this repo (isolation rules)
 - All writes stay inside this repo. **Never modify `/Users/hassiba/git/chatdev`** (read-only reference).
