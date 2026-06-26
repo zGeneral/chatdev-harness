@@ -1,0 +1,53 @@
+# The ChatDev software company (spec -> build -> review -> test) re-expressed AS a declarative
+# graph on the engine — proving the engine subsumes the hand-written chatdev-company workflow.
+# build/fix is a bounded loop via loop_counter; the reviewer is a genuinely read-only agent node.
+graph:
+  id: software_company
+  description: spec -> build(TDD) -> [PASS] review -> test ; [FAIL] -> gate(loop<=2) -> build
+  nodes:
+    - id: spec
+      type: literal
+      config:
+        content: |
+          Build a Python module ./companydemo/temp.py with:
+            celsius_to_fahrenheit(c: float) -> float   # round to 2 dp
+            fahrenheit_to_celsius(f: float) -> float    # round to 2 dp
+          Plus pytest tests ./companydemo/test_temp.py covering: 0C==32F, 100C==212F, -40C==-40F,
+          37C==98.6F, and a round-trip (c -> f -> c) for a few values.
+
+    - id: build
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the Programmer with REAL tools. TDD: create ./companydemo, write test_temp.py FIRST,
+          then temp.py, then run `cd companydemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q`
+          and iterate until it exits 0. If a previous attempt's review notes are upstream, apply them.
+        instruction: 'Finish with EXACTLY one final line: "RESULT: PASS" if pytest exited 0, else "RESULT: FAIL".'
+
+    - id: gate
+      type: loop_counter
+      config: { max_iterations: 2 }
+
+    - id: review
+      type: agent
+      config:
+        agentType: feature-dev:code-reviewer
+        role: |
+          Read ./companydemo/temp.py and its tests. Confirm both functions are correct and rounded to 2dp,
+          or list concrete issues. You are read-only.
+
+    - id: test
+      type: agent
+      config:
+        effort: low
+        role: |
+          Run `cd companydemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q` and report
+          the real exit code and passed/total. Do not edit anything.
+
+  edges:
+    - { from: spec, to: build }
+    - { from: build, to: review, condition: "contains:PASS" }
+    - { from: build, to: gate, condition: "contains:FAIL" }
+    - { from: gate, to: build }
+    - { from: review, to: test }

@@ -1,0 +1,37 @@
+# Port of ChatDev 2.0's data_visualization workflow, as a declarative graph.
+# Real execution: the coder node writes a matplotlib script and runs it, producing a real PNG.
+graph:
+  id: data_viz
+  description: spec(literal) -> coder(agent, matplotlib, real PNG) -> [PASS] reporter
+  nodes:
+    - id: spec
+      type: literal
+      config:
+        content: |
+          Dataset — monthly sales (units), Jan..Jun: [120, 135, 98, 160, 180, 210].
+          Produce a clear, labelled BAR chart saved to ./vizdemo/chart.png: title "Monthly Sales (H1)",
+          x-axis = month, y-axis = units, a value label above each bar, and a readable color.
+
+    - id: coder
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are a data-visualization engineer with REAL tools (Write/Edit/Bash). From the spec upstream:
+          create ./vizdemo, write make_chart.py using matplotlib with the non-interactive Agg backend
+          (matplotlib.use("Agg") — no display), render the described chart, and save it to ./vizdemo/chart.png.
+          Run it with `/Users/hassiba/git/chatdev_harness/.venv/bin/python vizdemo/make_chart.py`, then
+          confirm the PNG exists and is non-empty (`ls -l vizdemo/chart.png`).
+        instruction: |
+          Finish with EXACTLY one final line: "RESULT: PASS" if ./vizdemo/chart.png exists and is >0 bytes,
+          otherwise "RESULT: FAIL".
+
+    - id: reporter
+      type: agent
+      config:
+        effort: low
+        role: In ONE sentence, state what chart was produced and its path, from the upstream messages.
+
+  edges:
+    - { from: spec, to: coder }
+    - { from: coder, to: reporter, condition: "contains:PASS" }
