@@ -1,7 +1,7 @@
 export const meta = {
   name: 'chatdev-company',
-  description: 'Virtual software company: spec -> build(TDD) -> review->fix -> test->debug. Real subagents write real files and pass a real pytest suite (green = exit 0).',
-  whenToUse: 'Turn a product prompt into working, tested software via a ChatDev-style role pipeline with real tool execution.',
+  description: 'Virtual software company: spec -> build(TDD) -> review->fix -> test->debug. Real subagents write real files and pass a real pytest suite (green = exit 0). Supports incremental mode (args.incremental) to extend an existing codebase.',
+  whenToUse: 'Turn a product prompt into working, tested software via a ChatDev-style role pipeline with real tool execution. Pass args.incremental + args.change to extend an existing app instead of building from scratch.',
   phases: [
     { title: 'Spec', detail: 'spec-architect: product prompt -> build spec' },
     { title: 'Build', detail: 'programmer: TDD — tests first, then implement to green' },
@@ -33,6 +33,14 @@ const DEFAULT_PROMPT = [
   'If you test the CLI via subprocess, invoke it with `sys.executable` (so it runs under the same interpreter as pytest).',
 ].join('\n')
 const productPrompt = (args && args.prompt) || DEFAULT_PROMPT
+
+// Incremental mode (ChatDev `incremental_develop: True`): EXTEND an existing codebase in `target`
+// rather than scaffolding from scratch (ChatDev drops the from-scratch Coding phase in this mode).
+// Triggered by args.incremental; the work item is args.change (the feature/fix to add), falling
+// back to args.prompt. The whole suite (existing + new) must stay green.
+const incremental = !!(args && args.incremental)
+const changeRequest = (args && args.change) || (args && args.prompt) ||
+  'Review the existing code and extend it with a sensible, well-tested improvement.'
 
 // Repo-local venv python (has pytest). Tests run under this interpreter; CLI subprocess
 // tests should use sys.executable so they inherit it. Override via args.pybin if needed.
@@ -132,10 +140,20 @@ const EFFORT = 'medium' // demo target is simple; orchestrator (xhigh) verifies 
 // Phase 1 — Spec
 // ===========================================================================
 phase('Spec')
+log('Mode: ' + (incremental ? 'INCREMENTAL (extend existing code in ' + target + ')' : 'from-scratch build'))
+const specTask = incremental
+  ? SPEC_BRIEF +
+    '\n\n## Mode: INCREMENTAL (extend existing code)\nThe target dir ALREADY CONTAINS a working, tested codebase. ' +
+    'Do NOT redesign from scratch. First READ the existing code and tests in ' + target + '. Then produce an EXTENSION spec for this change request:' +
+    '\n\n## Change request\n' + changeRequest + '\n\n## Target dir (existing code): ' + target +
+    '\n\nYour spec must: (a) briefly summarize the existing design, (b) list ONLY the new/changed features, ' +
+    '(c) name exactly which existing files to MODIFY and which new files to ADD (each with a purpose), ' +
+    '(d) give the precise interface contract for the new/changed behavior AND note any existing contract that must be preserved, ' +
+    '(e) state data-model changes if any, and (f) a test plan for the NEW behavior, while REQUIRING that all existing tests keep passing.'
+  : SPEC_BRIEF + '\n\n## Product prompt\n' + productPrompt + '\n\n## Target dir\n' + target + '\n\nProduce the build spec now.'
 const spec = await agent(
-  SPEC_BRIEF + '\n\n## Product prompt\n' + productPrompt + '\n\n## Target dir\n' + target +
-  '\n\nProduce the build spec now.',
-  { label: 'spec-architect', phase: 'Spec', schema: SPEC_SCHEMA, effort: EFFORT },
+  specTask,
+  { label: incremental ? 'spec-architect:incremental' : 'spec-architect', phase: 'Spec', schema: SPEC_SCHEMA, effort: EFFORT },
 )
 const specText = JSON.stringify(spec, null, 2)
 log('Spec ready: ' + (spec.features ? spec.features.length : 0) + ' features, ' + (spec.files ? spec.files.length : 0) + ' files, ' + (spec.testPlan ? spec.testPlan.length : 0) + ' planned tests.')
@@ -144,13 +162,23 @@ log('Spec ready: ' + (spec.features ? spec.features.length : 0) + ' features, ' 
 // Phase 2 — Build (TDD)
 // ===========================================================================
 phase('Build')
+const buildTask = incremental
+  ? PROGRAMMER_BRIEF +
+    '\n\n## Mode: INCREMENTAL (extend existing code)\nThe target dir ' + target + ' ALREADY CONTAINS a working, tested codebase. ' +
+    'EXTEND it; do not rewrite it from scratch.' +
+    '\n\n## Extension spec\n' + specText + '\n\n## Target dir: ' + target +
+    '\n\n(1) Read the existing code and tests. (2) Run `' + PYTEST + '` first to confirm the existing suite is GREEN before you change anything. ' +
+    '(3) Write NEW failing tests for the new behavior (TDD). (4) Implement by modifying/adding only the files named in the spec. ' +
+    '(5) Run `' + PYTEST + '` and iterate until the WHOLE suite (existing + new) is GREEN (exit 0) — never leave an existing test broken. ' +
+    'Report filesWritten (new+changed), testsPassing/testsTotal, the real pytest exitCode, and notes.'
+  : PROGRAMMER_BRIEF + '\n\n## Spec to implement\n' + specText + '\n\n## Target dir: ' + target +
+    '\n\nBuild it TEST-FIRST. (1) Create the target dir if needed. (2) Write the pytest suite from the spec test plan ' +
+    'AGAINST the interface contract, in ' + target + '. (3) Run `' + PYTEST + '` — expect RED (nothing implemented yet). ' +
+    '(4) Implement the files from the spec file plan. (5) Run `' + PYTEST + '` and iterate until GREEN (exit 0). ' +
+    'Report filesWritten, testsPassing/testsTotal, the real pytest exitCode, and notes.'
 const build = await agent(
-  PROGRAMMER_BRIEF + '\n\n## Spec to implement\n' + specText + '\n\n## Target dir: ' + target +
-  '\n\nBuild it TEST-FIRST. (1) Create the target dir if needed. (2) Write the pytest suite from the spec test plan ' +
-  'AGAINST the interface contract, in ' + target + '. (3) Run `' + PYTEST + '` — expect RED (nothing implemented yet). ' +
-  '(4) Implement the files from the spec file plan. (5) Run `' + PYTEST + '` and iterate until GREEN (exit 0). ' +
-  'Report filesWritten, testsPassing/testsTotal, the real pytest exitCode, and notes.',
-  { label: 'programmer:build', phase: 'Build', schema: BUILD_SCHEMA, effort: EFFORT },
+  buildTask,
+  { label: incremental ? 'programmer:extend' : 'programmer:build', phase: 'Build', schema: BUILD_SCHEMA, effort: EFFORT },
 )
 log('Build: ' + build.testsPassing + '/' + build.testsTotal + ' tests passing, pytest exit ' + build.exitCode)
 
@@ -225,4 +253,4 @@ for (let i = 1; i <= 3; i++) {
 
 const green = !!(testResult && testResult.exitCode === 0)
 log(green ? 'COMPANY DONE: vertical slice is GREEN (pytest exit 0).' : 'COMPANY: slice NOT green — see finalTest report.')
-return { target, green, spec, build, reviewRounds, finalTest: testResult }
+return { target, mode: incremental ? 'incremental' : 'from-scratch', green, spec, build, reviewRounds, finalTest: testResult }

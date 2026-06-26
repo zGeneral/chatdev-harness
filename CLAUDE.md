@@ -84,6 +84,22 @@ role briefs inline. For the critical read-only role it dispatches the built-in
 read-only in the workflow too; the `.claude/agents` files remain the source of truth and
 enforce the scoping for interactive use.)
 
+## Presets / modes (ChatDev CompanyConfig)
+ChatDev ships pipeline presets in `CompanyConfig/` (Default, Human, Incremental, Art). This harness
+implements them as **modes of the one engine**, not separate companies:
+
+| Preset | Here | How to run |
+|---|---|---|
+| **Default** | The autonomous pipeline (spec → build → review → test). | `/build-company` or the Workflow with no mode flag. |
+| **Incremental** (`incremental_develop`) | Extend an EXISTING tested codebase instead of scaffolding from scratch; new + existing tests must stay green. | `/extend-company <change>` or `args: { incremental: true, change: "...", target: <existing dir> }`. |
+| **Human** (`HumanAgentInteraction`) | After the automated review, a **human** reviews and gives feedback (≤5 rounds) before the test gate. Runs as an interactive, main-agent-driven flow (a background Workflow can't pause for human turns) using the role agents + `AskUserQuestion`. | `/build-company-human [prompt]`. |
+| **Art** | Not yet ported — would wire an image-gen step (e.g. the `nanobanana` skill) to produce GUI assets. | — |
+
+Note: ChatDev has no per-domain "gamedev company" — its games (2048, Gomoku, …) are example
+WareHouse *outputs* of the Default (or Human) pipeline run on a game prompt. Build one here the same
+way: `/build-company "<game idea with testable logic>"`. The success signal is `pytest` green, so
+keep game *logic* testable (separate from rendering).
+
 ## Working in this repo (isolation rules)
 - All writes stay inside this repo. **Never modify `/Users/hassiba/git/chatdev`** (read-only reference).
 - The built app goes in `./demo`, kept separate from harness config (`.claude/`, `CLAUDE.md`).

@@ -47,6 +47,20 @@ green (10/10, exit 0).
 **Prerequisite (pytest):** `python3 -m venv .venv && .venv/bin/pip install pytest` (override the
 interpreter with `args.pybin`).
 
+## Presets / modes
+
+ChatDev's pipeline presets (`CompanyConfig/`) are implemented here as **modes of one engine**:
+
+| Preset | What it does | Run |
+|---|---|---|
+| **Default** | Autonomous spec → build → review → test. | `/build-company "<idea>"` |
+| **Incremental** | Extend an **existing** tested codebase (new + existing tests stay green). | `/extend-company "<change>"` |
+| **Human** | A **human** reviews and gives feedback (≤5 rounds) before the test gate; interactive. | `/build-company-human "<idea>"` |
+| **Art** | _Not yet ported_ — would wire image generation for GUI assets. | — |
+
+> ChatDev has no separate "gamedev company" — its games (2048, Gomoku, …) are example outputs of the
+> Default pipeline on a game prompt. Build one the same way; just keep the game *logic* pytest-testable.
+
 ## Repo layout
 
 | Path | What |
