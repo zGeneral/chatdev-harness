@@ -30,10 +30,14 @@ const DEFAULT_PROMPT = [
   '',
   'Tests: a pytest suite (in the target dir) covering add, list, done, the done-on-missing-id error, and a persistence round-trip',
   "(data survives a reload). Tests must be isolated and deterministic using pytest's tmp_path — never touching a real todos.json.",
+  'If you test the CLI via subprocess, invoke it with `sys.executable` (so it runs under the same interpreter as pytest).',
 ].join('\n')
 const productPrompt = (args && args.prompt) || DEFAULT_PROMPT
 
-const PYTEST = 'cd ' + target + ' && python -m pytest -q'
+// Repo-local venv python (has pytest). Tests run under this interpreter; CLI subprocess
+// tests should use sys.executable so they inherit it. Override via args.pybin if needed.
+const PYBIN = (args && args.pybin) || '/Users/hassiba/git/chatdev_harness/.venv/bin/python'
+const PYTEST = 'cd ' + target + ' && ' + PYBIN + ' -m pytest -q'
 
 // ---------------------------------------------------------------------------
 // Inline role briefs. The Workflow runtime does NOT resolve project
