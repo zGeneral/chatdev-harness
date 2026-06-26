@@ -64,6 +64,22 @@ ChatDev's pipeline presets (`CompanyConfig/`) are implemented here as **modes of
 > deep-research) need capabilities beyond Python+pytest. Games here keep *logic* in a pygame-free,
 > pytest-tested module; `game.py` is the renderer with a headless smoke mode.
 
+## Declarative graph engine (ChatDev 2.0)
+
+ChatDev 2.0 is a **declarative graph runtime** — author a YAML `graph: {nodes, edges}` and an executor
+runs it. [`.claude/workflows/chatdev-graph.js`](.claude/workflows/chatdev-graph.js) reimplements that
+Claude-Code-native: nodes (`agent`/`literal`/`passthrough`/`loop_counter`/`python`/`subgraph`) and edges
+that route on a node's output (`contains:` / `!contains:` / `regex:` / `equals:` / `default`), executed by
+**real subagents with real tools**.
+
+```bash
+/run-graph graphs/demo_build.yaml          # spec → builder(TDD, real files+pytest) → reviewer → reporter
+```
+
+See [`graphs/demo_build.yaml`](graphs/demo_build.yaml) for the shape and `CLAUDE.md` → "Declarative graph
+engine" for the node/edge reference. (Deliberately not ported: the Vue visual editor, multi-provider models,
+and retrieval-memory modules — replaced by Claude Code's UI, the subscription, and the filesystem.)
+
 ## Repo layout
 
 | Path | What |

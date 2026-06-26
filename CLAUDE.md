@@ -102,6 +102,43 @@ has a `yaml_instance/` directory of ~40 YAML-graph workflows, including a dedica
 (ported here) plus others (data-viz, Blender 3D, deep-research, video) that would need capabilities
 beyond Python+pytest. Games here keep *logic* in a pygame-free module so it stays testable.
 
+## Declarative graph engine (ChatDev 2.0 port)
+ChatDev 2.0 is a **declarative graph runtime** — you author a YAML `graph: {nodes, edges}` and an
+executor runs it. `.claude/workflows/chatdev-graph.js` reimplements that, Claude-Code-native: it
+executes a graph with **real subagents + tools** instead of just emitting text.
+
+**Schema** (author in `graphs/*.yaml`):
+```yaml
+graph:
+  id: my_graph
+  nodes:
+    - { id: a, type: literal,    config: { content: "..." } }
+    - { id: b, type: agent,      config: { role: "...", instruction: "...", agentType?, model?, effort?, schema? } }
+    - { id: g, type: loop_counter, config: { max_iterations: 2 } }
+  edges:
+    - { from: a, to: b }
+    - { from: b, to: c, condition: "contains:PASS" }   # else-branch: condition: "default"
+```
+- **Node types:** `literal` (static text), `passthrough` (forward input), `agent` (a real Claude
+  subagent — full tools by default; set `agentType` e.g. `feature-dev:code-reviewer` for read-only,
+  `schema` for structured output), `python` (run code via Bash), `loop_counter` (gate a back-edge to
+  bound a cycle), `subgraph` (`config.graph` runs nested). Entry = nodes with no incoming edge.
+- **Edge conditions** (evaluated on the source node's text output): absent/`true`, `contains:X`,
+  `!contains:X`, `regex:PAT`, `equals:V`, and `default` (taken only if no sibling edge matched).
+  A global `MAX_STEPS` guard plus `loop_counter` prevent runaway loops.
+
+**Run it** (the Workflow sandbox has no YAML parser, so a runner converts YAML→JSON first):
+```bash
+.venv/bin/python -c "import yaml,json,sys;print(json.dumps(yaml.safe_load(open(sys.argv[1]))['graph']))" graphs/demo_build.yaml
+```
+then `Workflow({ scriptPath: ".claude/workflows/chatdev-graph.js", args: { graph: <that JSON>, input: "..." } })`.
+Or use **`/run-graph graphs/demo_build.yaml`**. The engine returns the final node's output + an execution
+trace. `graphs/demo_build.yaml` is a working example (spec → builder(TDD, real files+pytest) → reviewer → reporter).
+
+Not ported from 2.0 (deliberate): the Vue **visual graph editor** (Claude Code's native UI replaces it),
+**multi-provider** models (Claude subscription only), and retrieval **memory** modules (filesystem +
+structured hand-offs are the shared state; a memory node is a future addition).
+
 ## Working in this repo (isolation rules)
 - All writes stay inside this repo. **Never modify `/Users/hassiba/git/chatdev`** (read-only reference).
 - The built app goes in `./demo`, kept separate from harness config (`.claude/`, `CLAUDE.md`).

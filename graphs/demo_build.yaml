@@ -1,0 +1,52 @@
+# A ChatDev-2.0-shaped declarative graph executed by .claude/workflows/chatdev-graph.js.
+# Nodes are agent/literal/passthrough/loop_counter/subgraph; edges route on the source
+# node's text output. This one proves REAL execution: the builder agent writes real files
+# and runs pytest; a read-only reviewer inspects; conditional edges route on PASS/FAIL.
+graph:
+  id: demo_build
+  description: spec(literal) -> builder(agent, real tools, TDD) -> [PASS] reviewer -> reporter
+  nodes:
+    - id: spec
+      type: literal
+      config:
+        content: |
+          Build a Python module at ./graphdemo/strutil.py with a function slugify(s: str) -> str
+          that: lowercases, strips leading/trailing whitespace, and replaces every run of
+          non-alphanumeric characters with a single hyphen, with no leading or trailing hyphens.
+          Examples: slugify("Hello,  World!") == "hello-world"; slugify("  A.B__C ") == "a-b-c".
+          Also write pytest tests at ./graphdemo/test_strutil.py covering those examples and edge cases.
+
+    - id: builder
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the Programmer with REAL tools (Write/Edit/Bash). Implement the spec from upstream
+          using TDD: create ./graphdemo, write test_strutil.py FIRST, then strutil.py, then run
+          `cd graphdemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q`
+          and iterate until it exits 0.
+        instruction: |
+          Finish your reply with EXACTLY one final line: "RESULT: PASS" if pytest exited 0,
+          otherwise "RESULT: FAIL".
+
+    - id: reviewer
+      type: agent
+      config:
+        agentType: feature-dev:code-reviewer
+        role: |
+          Read ./graphdemo/strutil.py and its tests. Briefly confirm slugify meets the spec
+          (lowercase, single hyphens, no leading/trailing hyphen) or list concrete issues. You are read-only.
+
+    - id: reporter
+      type: agent
+      config:
+        effort: low
+        role: |
+          In ONE sentence, summarize what was built in ./graphdemo and the final test result,
+          using the upstream messages.
+
+  edges:
+    - { from: spec, to: builder }
+    - { from: builder, to: reviewer, condition: "contains:PASS" }
+    - { from: builder, to: reporter, condition: "contains:FAIL" }
+    - { from: reviewer, to: reporter }
