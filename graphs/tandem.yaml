@@ -1,0 +1,132 @@
+# Tandem — a deterministic Klotski-variant puzzle, built by the harness and GROUNDED by the
+# game-design books in the personal-rag `game-design` notebook (Adams + Moore).
+# Pipeline: ground(personal-rag) -> design -> core(TDD: pure logic + pygame shell) ->
+#           [PASS] polish -> qa -> verify(pytest + headless smoke) ; [FAIL] -> gate -> core
+# Run:  /run-graph graphs/tandem.yaml   (builds into ./tandem)
+graph:
+  id: tandem
+  description: ground(books) -> design -> core(logic+game) -> polish -> qa -> verify
+  nodes:
+    - id: ground
+      type: memory
+      config:
+        backend: personal-rag
+        notebook: game-design
+        op: retrieve
+        top_k: 6
+        query: >
+          Designing clear, fair, satisfying PUZZLE and CASUAL games: teaching one core mechanic
+          without a manual, readability of game state, difficulty pacing and the aha/insight moment,
+          minimal UI, and giving the player honest feedback. Principles for a deterministic
+          sliding-block / Klotski-style puzzle.
+
+    - id: design
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the game designer/architect for "TANDEM", a deterministic puzzle. The retrieved
+          puzzle/casual game-design principles are UPSTREAM — use them ONLY for UX, readability,
+          teaching, difficulty pacing and feedback decisions. The CORE RULES below are FROZEN and
+          must be implemented EXACTLY (do not change them).
+
+          ## TANDEM — frozen rules
+          - A bounded rectangular grid of cells (rows x cols, <= 5x6). Each cell is empty or holds one
+            rigid 1x1 block. Block kinds: carriage A, carriage B (the two distinguished blocks), and
+            obstacle. Blocks never overlap; coordinates are integer (row, col).
+          - Each carriage has a FACING in {U,D,L,R}. Facing is chosen fresh before every pulse and is
+            NOT stored in the persistent state.
+          - The only input is a PULSE(fA, fB). Resolution, in FIXED carriage order (A first, then B):
+            a carriage tries to advance ONE cell along its facing, shoving the contiguous straight line
+            of blocks directly ahead of it IFF the cell just beyond that line is in-bounds AND empty;
+            otherwise the carriage STALLS (advances 0). EACH BLOCK MOVES AT MOST ONCE PER PULSE, and
+            `locked` dominates: any block (INCLUDING carriage B) that was shoved during carriage A's
+            resolution is locked and does NOT then initiate its own advance.
+          - GOLDEN TRACE (must be a passing test): a 1x6 corridor, cells col 0..5; A at col 1, B at col
+            2, empty at col 3; fA=R, fB=R. A resolves first: the line [A,B] has empty at col 3 beyond,
+            so A->col2, B->col3 (B is now locked). B's turn: locked, stays at col3. Result: A@col2,
+            B@col3 (NOT col4).
+          - WIN: the two carriages are orthogonally EDGE-ADJACENT (their cells differ by exactly one in
+            one axis and zero in the other — Manhattan distance 1). Diagonal adjacency is NOT a win.
+
+          ## Produce a precise implementation spec
+          Output a concrete spec the programmer will build into ./tandem:
+          - logic.py (NO pygame): a Board state (grid + the two carriage positions + obstacle set),
+            `pulse(board, fA, fB) -> new_board` implementing the rules above exactly (pure, returns a
+            new state; deterministic), `is_win(board) -> bool`, and `solve_bfs(board, max_nodes) ->
+            int|None` (unweighted BFS over the <=16 facing-pairs returning the MINIMUM pulse count to a
+            winning packing, or None; memoize on a canonical board key with the two carriages
+            individually labeled; bounded by max_nodes).
+          - game.py: a Pygame shell that renders the grid, obstacles, the two carriages (distinct
+            colors) and their current facings (arrows), lets the player set each facing and PULSE, shows
+            win, supports R to restart and a clean QUIT, never a pure-black background, 60 FPS via Clock.
+            HEADLESS SMOKE MODE: when env GAME_SMOKE_FRAMES=N is set, run N frames under
+            SDL_VIDEODRIVER=dummy (auto-pulsing with some facings) then pygame.quit()+sys.exit(0).
+          - tests/test_logic.py: cover the GOLDEN TRACE, a stall-against-wall case, a contiguous-line
+            shove, the locked-dominance guarantee, is_win true/false (incl. diagonal NOT a win),
+            determinism (same board+facings -> identical successor), and solve_bfs on a tiny hand-checked
+            board with a known minimum pulse count.
+          Fold the retrieved design principles into short UX/teaching/feedback notes (readability of
+          facings/blocks, how the first board teaches the coupled pulse). Be decisive and complete.
+
+    - id: core
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the Programmer with REAL tools. Build TANDEM into ./tandem per the upstream spec,
+          honoring the FROZEN RULES exactly (pulse resolution with fixed A-then-B priority, contiguous
+          line shove, each-block-moves-once, `locked` dominance; win = orthogonal edge adjacency).
+          TDD: write tests/test_logic.py FIRST (MUST include the golden-trace test: 1x6 corridor,
+          A@col1,B@col2,empty@col3,fA=R,fB=R -> A@col2,B@col3), then logic.py (pure, no pygame), then
+          game.py (Pygame shell + GAME_SMOKE_FRAMES headless smoke mode). Verify BOTH:
+            cd tandem && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q
+            cd tandem && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 /Users/hassiba/git/chatdev_harness/.venv/bin/python game.py
+          Iterate until pytest exits 0 AND the headless run exits 0.
+        instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if pytest exit 0 AND headless smoke exit 0, else "RESULT: FAIL".'
+
+    - id: gate
+      type: loop_counter
+      config: { max_iterations: 2 }
+
+    - id: polish
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the Polish Developer. Improve ./tandem/game.py ONLY: clear rendering of the grid,
+          carriages (distinct colors + facing arrows), obstacles, a readable HUD (pulse count, win
+          banner), tasteful feedback on pulse/win — WITHOUT breaking the headless smoke mode, the
+          mandatory reqs (no pure-black bg, R restart, 60 FPS, clean QUIT), or moving any logic out of
+          logic.py. Re-run the pytest + headless GAME_SMOKE_FRAMES run; both must stay green.
+        instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if both gates still pass, else "RESULT: FAIL".'
+
+    - id: qa
+      type: agent
+      config:
+        agentType: feature-dev:code-reviewer
+        role: |
+          Review ./tandem against the frozen TANDEM rules. Verify: pulse resolution is fixed-order
+          A-then-B with contiguous-line shove, each-block-moves-once and `locked` dominance (the golden
+          trace), is_win is orthogonal edge adjacency (diagonal is NOT a win), logic.py is pygame-free
+          and tested, solve_bfs returns a minimum count, and the headless smoke mode + mandatory game
+          reqs are present. List concrete issues or say LGTM. Read-only.
+
+    - id: verify
+      type: agent
+      config:
+        effort: low
+        role: |
+          Run BOTH and report, editing nothing:
+            cd tandem && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q
+            cd tandem && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 /Users/hassiba/git/chatdev_harness/.venv/bin/python game.py; echo "SMOKE_EXIT=$?"
+          Report logic tests passed/total, pytest exit, and smoke exit.
+
+  edges:
+    - { from: ground, to: design }
+    - { from: design, to: core }
+    - { from: core, to: polish, condition: "contains:PASS" }
+    - { from: core, to: gate, condition: "contains:FAIL" }
+    - { from: gate, to: core }
+    - { from: polish, to: qa }
+    - { from: qa, to: verify }
