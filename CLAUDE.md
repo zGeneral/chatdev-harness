@@ -12,7 +12,13 @@ They write real files (`Write`/`Edit`), run real commands (`Bash`), and pass a r
 crash check. See `CHATDEV_UNDERSTANDING.md` for the full concept→harness mapping.
 
 ## The company (roles → `.claude/agents/`)
-Four tool-scoped subagents. Separation of duties is **enforced by tool scoping**, not just prompts:
+Four tool-scoped subagents. For **interactive** Agent-tool use, the `tools:` frontmatter below
+is **enforced by the runtime** — the reviewer literally has no Write/Edit/Bash; the tester no
+Write/Edit. In the **workflow** path the runtime can't load project `.claude/agents`, so the
+workflow enforces the critical case by dispatching the review stage as the built-in read-only
+reviewer agent type (`feature-dev:code-reviewer`, also no Write/Edit/Bash); the other roles run
+prose-disciplined, with the orchestrator's **independent `pytest` run** as the green's compensating
+control. Either way the Programmer is the only role that mutates files.
 
 | Role | Agent | Tools | Charter |
 |---|---|---|---|
@@ -46,7 +52,7 @@ made explicit:
 - **Green / done:** `pytest` in the target dir exits 0. That is the company's definition of success.
 - **No-thrash:** if the same `pytest` failure recurs 3× without a new approach, stop and report
   the blocker rather than looping. The Build/Test loops have hard cycle caps for the same reason.
-- The Reviewer returning zero high-severity findings ends the Review loop early (ChatDev's `<INFO> Finished`).
+- The Reviewer returning zero high-or-medium-severity findings ends the Review loop early (ChatDev's `<INFO> Finished`).
 
 ## How to run the company
 Dispatch the Workflow with a product prompt and a target dir. Use the **`scriptPath`** form —
@@ -73,8 +79,10 @@ You can also run a single role interactively via the Agent tool (e.g. dispatch `
 on the current diff) — the `.claude/agents/*.md` definitions are the canonical, tool-scoped
 roles. (Note: the Workflow runtime resolves agent types from the built-in/plugin registry
 only — it does **not** pick up project `.claude/agents` — so the workflow embeds equivalent
-role briefs inline. The `.claude/agents` files remain the source of truth for each role and
-are what enforce the read-only reviewer and the no-edit tester for interactive use.)
+role briefs inline. For the critical read-only role it dispatches the built-in
+`feature-dev:code-reviewer` (genuinely no Write/Edit/Bash) so the reviewer is enforced
+read-only in the workflow too; the `.claude/agents` files remain the source of truth and
+enforce the scoping for interactive use.)
 
 ## Working in this repo (isolation rules)
 - All writes stay inside this repo. **Never modify `/Users/hassiba/git/chatdev`** (read-only reference).

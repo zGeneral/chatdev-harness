@@ -159,13 +159,26 @@ log('Build: ' + build.testsPassing + '/' + build.testsTotal + ' tests passing, p
 // (ChatDev CodeReview ComposedPhase / break_cycle on "<INFO> Finished")
 // ===========================================================================
 phase('Review')
+// The reviewer must be genuinely read-only even in the workflow. The Workflow runtime can't
+// resolve project .claude/agents, but it CAN resolve the built-in read-only reviewer
+// `feature-dev:code-reviewer` (tools: Read/Glob/Grep/... — no Write/Edit/Bash). Using it means
+// the reviewer here literally cannot edit or run code — enforced, not just asked. Fall back to a
+// prose-disciplined default subagent only if that agent type is unavailable.
+async function reviewStage(label) {
+  const prompt = REVIEWER_BRIEF + '\n\n## Spec\n' + specText + '\n\n## Target dir: ' + target +
+    '\n\nReview the implementation in ' + target + ' against the spec. Return prioritized findings ' +
+    '(each severity-tagged high/medium/low) and a summary. Do not edit or run anything.'
+  const opts = { label, phase: 'Review', schema: REVIEW_SCHEMA, effort: EFFORT }
+  try {
+    return await agent(prompt, { ...opts, agentType: 'feature-dev:code-reviewer' })
+  } catch (e) {
+    log('read-only reviewer agentType unavailable (' + String((e && e.message) || e).slice(0, 80) + ') — falling back to default subagent (prose-disciplined)')
+    return await agent(prompt, opts)
+  }
+}
 let reviewRounds = 0
 for (let i = 1; i <= 2; i++) {
-  const review = await agent(
-    REVIEWER_BRIEF + '\n\n## Spec\n' + specText + '\n\n## Target dir: ' + target +
-    '\n\nReview the implementation in ' + target + ' against the spec. Return prioritized findings (severity-tagged) and a summary. Do not edit or run anything.',
-    { label: 'reviewer:round' + i, phase: 'Review', schema: REVIEW_SCHEMA, effort: EFFORT },
-  )
+  const review = await reviewStage('reviewer:round' + i)
   reviewRounds = i
   const actionable = (review.findings || []).filter(f => f.severity === 'high' || f.severity === 'medium')
   log('Review round ' + i + ': ' + (review.findings || []).length + ' findings (' + actionable.length + ' high/medium).')
@@ -178,6 +191,7 @@ for (let i = 1; i <= 2; i++) {
     { label: 'programmer:fix' + i, phase: 'Review', schema: BUILD_SCHEMA, effort: EFFORT },
   )
   log('Fix round ' + i + ': pytest exit ' + fix.exitCode + ' (' + fix.testsPassing + '/' + fix.testsTotal + ').')
+  if (fix.exitCode !== 0) { log('Fix round ' + i + ' left tests RED — deferring to the Test/Debug phase rather than reviewing broken code.'); break }
 }
 
 // ===========================================================================
