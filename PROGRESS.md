@@ -32,3 +32,5 @@ PHASE: D (Run until green)
 - iter 2: Phase A complete — CHATDEV_UNDERSTANDING.md (concept→harness map). Next: Phase B design plan.
 - iter 3: Phase B complete — BUILD_PLAN.md + mechanics verified. Next: Phase C author agents/workflow/CLAUDE.md.
 - iter 4: Phase C complete — agents + workflow + CLAUDE.md + driver command. Next: Phase D run company → pytest green.
+- iter5: env (venv+pytest) + doc fixes. **Phase D company run wf_b06fdf3d-000 IN FLIGHT** (builds ./demo).
+        On re-entry: read its result, then independently run `.venv/bin/python -m pytest -q` in ./demo to confirm green.
