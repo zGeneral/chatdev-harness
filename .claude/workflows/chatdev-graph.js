@@ -130,10 +130,16 @@ async function executeNode(node, message) {
     const topK = cfg.top_k || 5
     const ENVF = '/Users/hassiba/git/chatdev_harness/.env'
     if (backend === 'personal-rag') {
+      // Private/optional backend: retrieve from a personal-rag notebook via tools/rag_search.py
+      // (Worker /api/search; reads the bridge token from ~/.claude.json). The helper prints
+      // "MEMORY UNAVAILABLE" if no creds, so this degrades gracefully for anyone without it.
+      const nb = cfg.notebook || cfg.namespace || 'default'
       return await agent(
-        'Retrieve the most relevant passages for the query below from the personal-rag knowledge base. ' +
-        'Find its retrieval/query tool via ToolSearch (the personal-rag MCP). Return the passages as concise bullets. ' +
-        'If the personal-rag MCP is NOT available in your tools, reply with EXACTLY: MEMORY UNAVAILABLE\n\n## Query\n' + q,
+        'You have Bash. Retrieve relevant passages by running tools/rag_search.py and return its stdout ' +
+        'VERBATIM as your result (it prints bullets, or exactly "MEMORY UNAVAILABLE" / "no relevant memory"). Run:\n' +
+        '  /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/rag_search.py ' +
+        '--notebook ' + nb + ' --top-k ' + topK + ' --query <QUERY>\n' +
+        'where <QUERY> is this text, properly shell-quoted:\n' + q,
         { label: node.id, phase: 'Graph', effort: 'low' })
     }
     if (op === 'store') {

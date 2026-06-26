@@ -144,9 +144,10 @@ trace. `graphs/demo_build.yaml` is a working example (spec → builder(TDD, real
 - **`backend: cloudflare`** (default) → the `cloudflare/memory-worker/` Worker (Workers AI `bge-m3`
   embeddings + Vectorize + D1; no external keys). Needs `MEMORY_URL`/`MEMORY_TOKEN` in `.env` — see
   `.env.example` and the worker's README to deploy your own.
-- **`backend: personal-rag`** (optional, private) → retrieves from a personal RAG MCP (e.g. a corpus of
-  **game-design books** to ground the design phase). **Gracefully degrades** to a no-op if that MCP
-  isn't present, so it never breaks a clone. `namespace` isolates entries per project/run.
+- **`backend: personal-rag`** (optional, private) → retrieves from a personal-rag **notebook** (e.g. a
+  corpus of **game-design books** to ground the design phase) via `tools/rag_search.py` (the Worker's
+  `/api/search`; creds from `RAG_API_URL`/`RAG_API_TOKEN` or the bridge config). Config takes `notebook`
+  (e.g. `game-design`). **Gracefully degrades** to "MEMORY UNAVAILABLE" if no creds, so it never breaks a clone.
 - `op: retrieve` returns the matched snippets as context for downstream nodes; `op: store` saves text.
   `graphs/memory_demo.yaml` is a working example (recall game-design principles → apply them).
 
