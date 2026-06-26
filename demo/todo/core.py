@@ -36,6 +36,20 @@ def mark_done(path: str | os.PathLike, todo_id: int) -> dict:
     raise TodoError(f"no todo with id {todo_id}")
 
 
+def remove_todo(path: str | os.PathLike, todo_id: int) -> dict:
+    """Remove the todo with ``todo_id``, persist remainder, return it.
+
+    Raise TodoError if no todo has that id (store left unchanged).
+    """
+    todos = load_todos(path)
+    for index, item in enumerate(todos):
+        if item["id"] == todo_id:
+            del todos[index]
+            save_todos(path, todos)
+            return item
+    raise TodoError(f"no todo with id {todo_id}")
+
+
 def format_todo(todo: dict) -> str:
     """Render a todo as '<id> [ ] <text>' / '<id> [x] <text>'."""
     mark = "x" if todo["done"] else " "

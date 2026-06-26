@@ -5,6 +5,7 @@ from .core import (
     format_todo,
     list_todos,
     mark_done,
+    remove_todo,
 )
 from .storage import load_todos, save_todos
 
@@ -14,6 +15,7 @@ __all__ = [
     "add_todo",
     "list_todos",
     "mark_done",
+    "remove_todo",
     "format_todo",
     "TodoError",
 ]

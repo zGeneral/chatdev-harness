@@ -5,7 +5,7 @@ import argparse
 import os
 import sys
 
-from .core import TodoError, add_todo, format_todo, list_todos, mark_done
+from .core import TodoError, add_todo, format_todo, list_todos, mark_done, remove_todo
 
 
 def _resolve_path() -> str:
@@ -23,6 +23,9 @@ def main(argv: list[str] | None = None) -> int:
 
     done_p = sub.add_parser("done", help="mark a todo as done")
     done_p.add_argument("id", type=int)
+
+    remove_p = sub.add_parser("remove", help="remove a todo")
+    remove_p.add_argument("id", type=int)
 
     args = parser.parse_args(argv)
     path = _resolve_path()
@@ -44,6 +47,15 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Error: {exc}", file=sys.stderr)
             return 1
         print(f"Marked todo {args.id} as done")
+        return 0
+
+    if args.command == "remove":
+        try:
+            remove_todo(path, args.id)
+        except TodoError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
+        print(f"Removed todo {args.id}")
         return 0
 
     return 2

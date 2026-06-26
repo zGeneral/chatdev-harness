@@ -10,6 +10,7 @@ from todo import (
     list_todos,
     load_todos,
     mark_done,
+    remove_todo,
     save_todos,
     TodoError,
 )
@@ -106,6 +107,83 @@ def test_cli_done_missing_id_exit_code(tmp_path):
     full_env = {**os.environ, "TODO_FILE": str(store)}
     res = subprocess.run(
         [sys.executable, "-m", "todo", "done", "99"],
+        cwd=DEMO_DIR, env=full_env, capture_output=True, text=True,
+    )
+    assert res.returncode == 1
+    assert "Error: no todo with id 99" in res.stderr
+
+
+def test_remove_existing_item_returns_and_deletes(tmp_path):
+    p = tmp_path / "todos.json"
+    add_todo(p, "buy milk")
+    add_todo(p, "walk dog")
+    removed = remove_todo(p, 1)
+    assert removed == {"id": 1, "text": "buy milk", "done": False}
+    remaining = list_todos(p)
+    assert remaining == [{"id": 2, "text": "walk dog", "done": False}]
+
+
+def test_remove_missing_id_raises(tmp_path):
+    p = tmp_path / "todos.json"
+    add_todo(p, "buy milk")
+    with pytest.raises(TodoError) as exc:
+        remove_todo(p, 99)
+    assert "99" in str(exc.value)
+    assert list_todos(p) == [{"id": 1, "text": "buy milk", "done": False}]
+
+
+def test_remove_no_id_reuse(tmp_path):
+    # Removing an item must not cause a later add to reuse a prior id.
+    # Allocation stays max(existing ids)+1, so removing id 1 from [1, 2]
+    # and adding again yields id 3 (id 1 is not reused).
+    p = tmp_path / "todos.json"
+    add_todo(p, "a")
+    add_todo(p, "b")
+    remove_todo(p, 1)
+    c = add_todo(p, "c")
+    assert c["id"] == 3
+
+
+def test_persistence_round_trip_after_remove(tmp_path):
+    p = tmp_path / "todos.json"
+    add_todo(p, "buy milk")
+    add_todo(p, "walk dog")
+    remove_todo(p, 1)
+    assert load_todos(p) == [{"id": 2, "text": "walk dog", "done": False}]
+
+
+def test_cli_remove_success_subprocess(tmp_path):
+    store = tmp_path / "todos.json"
+    import os
+    full_env = {**os.environ, "TODO_FILE": str(store)}
+
+    add = subprocess.run(
+        [sys.executable, "-m", "todo", "add", "buy milk"],
+        cwd=DEMO_DIR, env=full_env, capture_output=True, text=True,
+    )
+    assert add.returncode == 0
+
+    rem = subprocess.run(
+        [sys.executable, "-m", "todo", "remove", "1"],
+        cwd=DEMO_DIR, env=full_env, capture_output=True, text=True,
+    )
+    assert rem.returncode == 0
+    assert rem.stdout.strip() == "Removed todo 1"
+
+    lst = subprocess.run(
+        [sys.executable, "-m", "todo", "list"],
+        cwd=DEMO_DIR, env=full_env, capture_output=True, text=True,
+    )
+    assert lst.returncode == 0
+    assert lst.stdout.strip() == ""
+
+
+def test_cli_remove_missing_id_exit_code(tmp_path):
+    store = tmp_path / "todos.json"
+    import os
+    full_env = {**os.environ, "TODO_FILE": str(store)}
+    res = subprocess.run(
+        [sys.executable, "-m", "todo", "remove", "99"],
         cwd=DEMO_DIR, env=full_env, capture_output=True, text=True,
     )
     assert res.returncode == 1
