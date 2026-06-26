@@ -27,15 +27,17 @@ graph:
       type: agent
       config:
         role: |
-          You have Bash. Generate the image by running EXACTLY this (substituting <PROMPT> with the
-          art director's prompt from upstream, properly quoted), after creating the output dir:
+          You have Bash. First load the Gemini API key from the repo .env:
+            set -a; . /Users/hassiba/git/chatdev_harness/.env; set +a   # sets GEMINI_API_KEY
+          Then generate the image, substituting <PROMPT> with the art director's prompt from upstream
+          (properly shell-quoted), after creating the output dir:
             mkdir -p /Users/hassiba/git/chatdev_harness/artdemo
-            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/.claude/skills/nanobanana/generate.py \
+            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/genimage.py \
               --model gemini-2.5-flash-image \
               --output-dir /Users/hassiba/git/chatdev_harness/artdemo \
               --name hero \
               --prompt "<PROMPT>"
-          The script prints the saved PNG path. If it prints an HTTP error, surface it verbatim.
+          The script (repo-local, stdlib-only) prints the saved PNG path. If it prints an HTTP error, surface it verbatim.
         instruction: |
           Then check the PNG: `ls -l /Users/hassiba/git/chatdev_harness/artdemo/hero.png`.
           Finish with EXACTLY one final line: "RESULT: PASS" if hero.png exists and is >0 bytes, else "RESULT: FAIL".

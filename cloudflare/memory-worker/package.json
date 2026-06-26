@@ -1,0 +1,14 @@
+{
+  "name": "chatdev-memory",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Retrieval-memory service for the ChatDev harness — Workers AI (bge-m3) + Vectorize + D1.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.83.0"
+  }
+}

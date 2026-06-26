@@ -117,6 +117,40 @@ async function executeNode(node, message) {
       { label: node.id, phase: 'Graph', effort: 'low' })
     return String(r == null ? '' : r)
   }
+  if (type === 'memory') {
+    // Retrieval memory. backend: 'cloudflare' (default; the chatdev-memory Worker) or
+    // 'personal-rag' (optional, private; gracefully degrades if the MCP is absent).
+    // op: 'retrieve' (default) | 'store'. namespace isolates entries. The node runs an
+    // agent (the sandbox has no fetch) that reads MEMORY_URL/MEMORY_TOKEN from the repo .env.
+    const backend = cfg.backend || 'cloudflare'
+    const op = cfg.op || 'retrieve'
+    const ns = cfg.namespace || 'default'
+    const q = cfg.query || message
+    const text = cfg.text || message
+    const topK = cfg.top_k || 5
+    const ENVF = '/Users/hassiba/git/chatdev_harness/.env'
+    if (backend === 'personal-rag') {
+      return await agent(
+        'Retrieve the most relevant passages for the query below from the personal-rag knowledge base. ' +
+        'Find its retrieval/query tool via ToolSearch (the personal-rag MCP). Return the passages as concise bullets. ' +
+        'If the personal-rag MCP is NOT available in your tools, reply with EXACTLY: MEMORY UNAVAILABLE\n\n## Query\n' + q,
+        { label: node.id, phase: 'Graph', effort: 'low' })
+    }
+    if (op === 'store') {
+      return await agent(
+        'You have Bash. Load the memory config with `set -a; . ' + ENVF + '; set +a` (sets $MEMORY_URL, $MEMORY_TOKEN). ' +
+        'Then POST the text below to $MEMORY_URL/upsert (header "authorization: Bearer $MEMORY_TOKEN", JSON body ' +
+        '{"namespace":"' + ns + '","text": <the text>}), retrying up to 3x one-at-a-time on any transient/edge error. ' +
+        'Report the returned id.\n\n## Text to store\n' + text,
+        { label: node.id, phase: 'Graph', effort: 'low' })
+    }
+    return await agent(
+      'You have Bash. Load the memory config with `set -a; . ' + ENVF + '; set +a` (sets $MEMORY_URL, $MEMORY_TOKEN). ' +
+      'Then POST to $MEMORY_URL/query (header "authorization: Bearer $MEMORY_TOKEN", JSON body ' +
+      '{"namespace":"' + ns + '","query": <the query>, "top_k": ' + topK + '}) and return the retrieved snippets\' text ' +
+      'as concise bullets. If the result is empty, reply exactly "no relevant memory".\n\n## Query\n' + q,
+      { label: node.id, phase: 'Graph', effort: 'low' })
+  }
   if (type === 'subgraph') {
     const sub = cfg.graph
     if (!sub) return message

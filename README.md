@@ -9,6 +9,31 @@ layer scrapes into files, and "test" by running a program for ~3 seconds and gre
 `Traceback`. Here the role-agents have **real tools** — they write real files (`Write`/`Edit`),
 run real commands (`Bash`), and pass a **real `pytest` suite** (exit 0 = done).
 
+## Setup & configuration
+
+The harness runs inside [Claude Code](https://claude.com/claude-code) (it uses subagents, the
+Workflow tool, and `.claude/` config). Clone it and work *inside* the repo so Claude Code picks up
+`.claude/` + `CLAUDE.md`.
+
+**1. Python toolchain** (for the build/test gates — required):
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+```
+This installs `pytest` (the success signal), `pyyaml` (the graph YAML→JSON bridge), `matplotlib`
+(data-viz graph), and `pygame-ce` (game factory). The workflows call `.venv/bin/python`; override with
+`args.pybin` if your interpreter lives elsewhere.
+
+**2. Optional features** — copy `.env.example` → `.env` (gitignored) and fill in only what you want:
+
+| Feature | Needs | How |
+|---|---|---|
+| **Retrieval memory** (`memory` graph nodes) | a Cloudflare account | Deploy the Worker in [`cloudflare/memory-worker/`](cloudflare/memory-worker/README.md) (Workers AI + Vectorize + D1, no extra keys), then set `MEMORY_URL` / `MEMORY_TOKEN` in `.env`. |
+| **Art** (`graphs/art.yaml`) | a Gemini API key | Get one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey), set `GEMINI_API_KEY` in `.env`. Image gen runs via the repo-local [`tools/genimage.py`](tools/genimage.py). |
+| **Personal corpus grounding** (optional, private) | your own RAG MCP | A `memory` node with `backend: personal-rag` retrieves from your knowledge base; it **gracefully degrades to a no-op** for anyone who doesn't have it, so it never breaks a clone. |
+
+Everything in step 2 is optional — the core company/gamedev/data-viz pipelines and all the test
+gates work with just step 1.
+
 ## How it works
 
 Four tool-scoped role subagents (`.claude/agents/`), orchestrated by a deterministic

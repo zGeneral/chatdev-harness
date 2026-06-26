@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "chatdev-memory",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-20",
+  "observability": { "enabled": true },
+
+  // Workers AI — used to embed text/queries with @cf/baai/bge-m3 (1024-dim).
+  "ai": { "binding": "AI" },
+
+  // Vectorize — the vector store. A namespace metadata index enables per-project/run filtering.
+  "vectorize": [
+    { "binding": "VECTORIZE", "index_name": "chatdev-memory" }
+  ],
+
+  // D1 — holds the raw chunk text keyed by vector id.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "chatdev-memory",
+      "database_id": "23f69ac4-6bf8-4d85-aebb-ef02da5ee8d1"
+    }
+  ]
+
+  // Secret (set out-of-band, never committed): AUTH_TOKEN — bearer token for the two routes.
+  //   wrangler secret put AUTH_TOKEN < secret.txt
+}

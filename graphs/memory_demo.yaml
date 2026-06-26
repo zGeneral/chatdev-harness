@@ -1,0 +1,31 @@
+# Proves the `memory` node: retrieve game-design knowledge from the Cloudflare Vectorize memory
+# (namespace "gamedesign") and apply it. Requires .env (MEMORY_URL, MEMORY_TOKEN) — see .env.example.
+#
+# Backends:
+#   backend: cloudflare    -> the chatdev-memory Worker (default; public, documented).
+#   backend: personal-rag  -> Kamal's private personal-rag MCP (optional; e.g. game-design books).
+#                             Gracefully degrades to no-op for anyone who lacks that MCP.
+graph:
+  id: memory_demo
+  description: recall(memory, cloudflare) -> apply(agent uses the retrieved principles)
+  nodes:
+    - id: recall
+      type: memory
+      config:
+        backend: cloudflare
+        op: retrieve
+        namespace: gamedesign
+        query: making a fast arcade dodge game feel satisfying and readable
+        top_k: 3
+
+    - id: apply
+      type: agent
+      config:
+        effort: low
+        role: |
+          You are designing a fast arcade "falling rocks dodge" game. Using ONLY the retrieved
+          game-design principles provided upstream, give 3 concrete, specific recommendations for THIS
+          game, and note which retrieved principle each one applies. If no principles were retrieved, say so.
+
+  edges:
+    - { from: recall, to: apply }

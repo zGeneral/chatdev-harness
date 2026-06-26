@@ -1,0 +1,6 @@
+# Python dependencies for the ChatDev harness (install into a venv — see README "Setup").
+#   python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+pytest>=8           # the success signal for company/graph builds
+pyyaml>=6           # YAML->JSON bridge for the declarative graph engine (/run-graph)
+matplotlib>=3.8     # data-visualization graph (graphs/data_viz.yaml)
+pygame-ce>=2.5      # game factory (graphs/game_factory.yaml, chatdev-gamedev)

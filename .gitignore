@@ -6,6 +6,16 @@ demo/**/__pycache__/
 .pytest_cache/
 __pycache__/
 
+# Secrets & local config — NEVER commit (only .env.example is tracked)
+.env
+.dev.vars
+*.secret
+secret.txt
+
+# Cloudflare worker local state / deps
+cloudflare/**/node_modules/
+**/.wrangler/
+
 # Scratch / OS
 .DS_Store
 *.log

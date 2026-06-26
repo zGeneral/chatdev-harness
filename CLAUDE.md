@@ -122,7 +122,8 @@ graph:
 - **Node types:** `literal` (static text), `passthrough` (forward input), `agent` (a real Claude
   subagent — full tools by default; set `agentType` e.g. `feature-dev:code-reviewer` for read-only,
   `schema` for structured output), `python` (run code via Bash), `loop_counter` (gate a back-edge to
-  bound a cycle), `subgraph` (`config.graph` runs nested). Entry = nodes with no incoming edge.
+  bound a cycle), `subgraph` (`config.graph` runs nested), `memory` (retrieval memory; see below).
+  Entry = nodes with no incoming edge.
 - **Edge conditions** (evaluated on the source node's text output): absent/`true`, `contains:X`,
   `!contains:X`, `regex:PAT`, `equals:V`, and `default` (taken only if no sibling edge matched).
   A global `MAX_STEPS` guard plus `loop_counter` prevent runaway loops.
@@ -135,9 +136,22 @@ then `Workflow({ scriptPath: ".claude/workflows/chatdev-graph.js", args: { graph
 Or use **`/run-graph graphs/demo_build.yaml`**. The engine returns the final node's output + an execution
 trace. `graphs/demo_build.yaml` is a working example (spec → builder(TDD, real files+pytest) → reviewer → reporter).
 
-Not ported from 2.0 (deliberate): the Vue **visual graph editor** (Claude Code's native UI replaces it),
-**multi-provider** models (Claude subscription only), and retrieval **memory** modules (filesystem +
-structured hand-offs are the shared state; a memory node is a future addition).
+**Retrieval memory** (`memory` node — ChatDev 2.0's file/FAISS/mem0 stores, reimagined on Cloudflare):
+```yaml
+- { id: recall, type: memory, config: { backend: cloudflare, op: retrieve, namespace: gamedesign, query: "...", top_k: 4 } }
+- { id: save,   type: memory, config: { backend: cloudflare, op: store,    namespace: "proj:x", text: "..." } }
+```
+- **`backend: cloudflare`** (default) → the `cloudflare/memory-worker/` Worker (Workers AI `bge-m3`
+  embeddings + Vectorize + D1; no external keys). Needs `MEMORY_URL`/`MEMORY_TOKEN` in `.env` — see
+  `.env.example` and the worker's README to deploy your own.
+- **`backend: personal-rag`** (optional, private) → retrieves from a personal RAG MCP (e.g. a corpus of
+  **game-design books** to ground the design phase). **Gracefully degrades** to a no-op if that MCP
+  isn't present, so it never breaks a clone. `namespace` isolates entries per project/run.
+- `op: retrieve` returns the matched snippets as context for downstream nodes; `op: store` saves text.
+  `graphs/memory_demo.yaml` is a working example (recall game-design principles → apply them).
+
+Not ported from 2.0 (deliberate): the Vue **visual graph editor** (Claude Code's native UI replaces it)
+and **multi-provider** models (Claude subscription only).
 
 ## Working in this repo (isolation rules)
 - All writes stay inside this repo. **Never modify `/Users/hassiba/git/chatdev`** (read-only reference).
