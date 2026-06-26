@@ -1,8 +1,8 @@
 # PROGRESS — ChatDev → Claude Code harness
 
-ITERATION: 3
+ITERATION: 4
 NO_PROGRESS: 0
-PHASE: C (Build)
+PHASE: D (Run until green)
 
 ## Phase checklist
 - [x] **A — Understand.** Explored ChatDev (`chatdev1.0` branch). Mapped roles, 8-phase chat
@@ -12,8 +12,10 @@ PHASE: C (Build)
 - [x] **B — Design.** Verified Claude Code 2.1.193 agent frontmatter/tool-scoping. Wrote
       `BUILD_PLAN.md`: 4 tool-scoped agents + Workflow pipeline + CLAUDE.md, demo contract,
       task order, risks. Rationale recorded; self-reviewed; no pause.
-- [ ] **C — Build.** Author `.claude/agents/*.md` (spec-architect, programmer, reviewer, tester),
-      the Workflow orchestration, `CLAUDE.md`, optional driver command.
+- [x] **C — Build.** Authored 4 tool-scoped agents (`.claude/agents/`), the Workflow
+      (`.claude/workflows/chatdev-company.js`, syntax-checked, review→fix + test→debug loops +
+      no-thrash guard), `CLAUDE.md` (company charter), and `/build-company` driver command.
+      Probed: Workflow runtime does NOT resolve project agentType → workflow embeds role briefs inline.
 - [ ] **D — Run until green.** Drive the company on the demo target → `./demo` todo CLI →
       `pytest` exits 0. Self-review tool scoping (read-only reviewer). Finalize.
 
@@ -29,3 +31,4 @@ PHASE: C (Build)
 - iter 1: git init + branch `harness-build`; wrote PROGRESS.md. Next: Phase A exploration.
 - iter 2: Phase A complete — CHATDEV_UNDERSTANDING.md (concept→harness map). Next: Phase B design plan.
 - iter 3: Phase B complete — BUILD_PLAN.md + mechanics verified. Next: Phase C author agents/workflow/CLAUDE.md.
+- iter 4: Phase C complete — agents + workflow + CLAUDE.md + driver command. Next: Phase D run company → pytest green.
