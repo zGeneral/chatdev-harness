@@ -1,0 +1,69 @@
+# The GameDev factory (ChatDev 2.0 GameDev_with_manager) re-expressed AS a declarative graph,
+# so the game pipeline runs on the same engine as everything else. Keeps the dual success signal:
+# pure logic in a pygame-free module (pytest) + a headless smoke-run of the real game.
+# Run on demand:  /run-graph graphs/game_factory.yaml   (a full game build is a heavier run.)
+graph:
+  id: game_factory
+  description: gdd -> core(build, TDD logic + headless game) -> polish -> qa -> verify(pytest + smoke)
+  nodes:
+    - id: gdd
+      type: literal
+      config:
+        content: |
+          Design + build a small Pygame game in ./gamegraphdemo: a "paddle bounce" — a paddle at the
+          bottom moves left/right (arrow keys, clamped), a ball bounces off walls/paddle, miss = game over,
+          R restarts, score = bounces. Never pure-black background; 60 FPS via Clock; clean QUIT.
+
+    - id: core
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the Game Core Developer with REAL tools. Build into ./gamegraphdemo, keeping ALL pure
+          logic (paddle clamp, ball physics, collision, scoring, state) in logic.py with NO pygame import,
+          covered by pytest in tests/test_logic.py. game.py is the Pygame shell that imports logic.py and
+          supports a HEADLESS SMOKE MODE: when env GAME_SMOKE_FRAMES=N is set, run N frames under
+          SDL_VIDEODRIVER=dummy then pygame.quit()+sys.exit(0). Verify with:
+            cd gamegraphdemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q
+            cd gamegraphdemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 /Users/hassiba/git/chatdev_harness/.venv/bin/python game.py
+        instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if pytest exit 0 AND the headless run exits 0, else "RESULT: FAIL".'
+
+    - id: gate
+      type: loop_counter
+      config: { max_iterations: 2 }
+
+    - id: polish
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the Polish Developer. Add tasteful visual juice to ./gamegraphdemo/game.py (color, simple
+          particles/feedback, centered HUD) WITHOUT breaking the headless smoke mode or the logic tests, and
+          WITHOUT moving logic out of logic.py. Re-run the pytest + the headless GAME_SMOKE_FRAMES run; both must stay green.
+        instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if both gates still pass, else "RESULT: FAIL".'
+
+    - id: qa
+      type: agent
+      config:
+        agentType: feature-dev:code-reviewer
+        role: |
+          Review ./gamegraphdemo: is the logic genuinely pygame-free and tested, the headless smoke mode present,
+          and the mandatory reqs met (no pure-black bg, R restart, 60 FPS, clean QUIT)? List issues or say LGTM. Read-only.
+
+    - id: verify
+      type: agent
+      config:
+        effort: low
+        role: |
+          Run BOTH and report results, editing nothing:
+            cd gamegraphdemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q
+            cd gamegraphdemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 /Users/hassiba/git/chatdev_harness/.venv/bin/python game.py; echo "SMOKE_EXIT=$?"
+          Report logic tests passed/total, pytest exit, and smoke exit.
+
+  edges:
+    - { from: gdd, to: core }
+    - { from: core, to: polish, condition: "contains:PASS" }
+    - { from: core, to: gate, condition: "contains:FAIL" }
+    - { from: gate, to: core }
+    - { from: polish, to: qa }
+    - { from: qa, to: verify }

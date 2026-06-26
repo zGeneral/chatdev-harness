@@ -1,0 +1,52 @@
+# Port of ChatDev's Art preset (Chief Creative Officer / asset generation), as a declarative
+# graph. The image node performs REAL generation by calling the nanobanana generate.py CLI
+# (Google Gemini image model; API key burned into the script). Produces a real PNG on disk.
+graph:
+  id: art
+  description: brief(literal) -> art_director(craft prompt) -> image(nanobanana -> real PNG) -> [PASS] reporter
+  nodes:
+    - id: brief
+      type: literal
+      config:
+        content: |
+          Create a hero key-art image for the retro arcade game "Rockfall: Last Drift":
+          a small cyan ship near the bottom dodging grey rocks falling from above, neon-on-slate
+          palette (#0E1320 background, #36E2C8 ship, #8A93A6 rocks), clean flat-vector style,
+          dramatic portrait composition, crisp and game-cover-worthy.
+
+    - id: art_director
+      type: agent
+      config:
+        effort: low
+        role: |
+          You are an art director. Turn the brief upstream into ONE vivid, concrete image-generation
+          prompt (1-3 sentences: subject, style, palette, composition, mood). Output ONLY the prompt text,
+          nothing else.
+
+    - id: image
+      type: agent
+      config:
+        role: |
+          You have Bash. Generate the image by running EXACTLY this (substituting <PROMPT> with the
+          art director's prompt from upstream, properly quoted), after creating the output dir:
+            mkdir -p /Users/hassiba/git/chatdev_harness/artdemo
+            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/.claude/skills/nanobanana/generate.py \
+              --model gemini-2.5-flash-image \
+              --output-dir /Users/hassiba/git/chatdev_harness/artdemo \
+              --name hero \
+              --prompt "<PROMPT>"
+          The script prints the saved PNG path. If it prints an HTTP error, surface it verbatim.
+        instruction: |
+          Then check the PNG: `ls -l /Users/hassiba/git/chatdev_harness/artdemo/hero.png`.
+          Finish with EXACTLY one final line: "RESULT: PASS" if hero.png exists and is >0 bytes, else "RESULT: FAIL".
+
+    - id: reporter
+      type: agent
+      config:
+        effort: low
+        role: In ONE sentence, state what image was generated and its path, from the upstream messages.
+
+  edges:
+    - { from: brief, to: art_director }
+    - { from: art_director, to: image }
+    - { from: image, to: reporter, condition: "contains:PASS" }
