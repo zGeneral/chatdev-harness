@@ -14,8 +14,9 @@ Do this:
    `args` entirely to build the **default demo target** (a Python todo CLI in `./demo`).
 2. Pick the target dir: `./demo` for the demo, or a fresh subdir (e.g. `./<appname>`) for a
    new product. Pass it as `args.target`.
-3. Invoke the workflow:
-   `Workflow({ name: "chatdev-company", args: { prompt: <prompt or omit>, target: <dir> } })`
+3. Invoke the workflow (use `scriptPath` — always works; `name: "chatdev-company"` only
+   resolves if this Claude Code version discovers project `.claude/workflows/` at startup):
+   `Workflow({ scriptPath: ".claude/workflows/chatdev-company.js", args: { prompt: <prompt or omit>, target: <dir> } })`
 4. When it finishes, **independently verify** the authoritative green: run
    `cd <target> && python -m pytest -q` yourself and read the real exit code.
 5. Report: green/red, tests passing/total, files written, and where the app lives.

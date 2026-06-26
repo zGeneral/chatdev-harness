@@ -49,15 +49,25 @@ made explicit:
 - The Reviewer returning zero high-severity findings ends the Review loop early (ChatDev's `<INFO> Finished`).
 
 ## How to run the company
-Dispatch the Workflow with a product prompt and a target dir:
+Dispatch the Workflow with a product prompt and a target dir. Use the **`scriptPath`** form —
+it always works; the `name: "chatdev-company"` form only resolves if your Claude Code version
+discovers project `.claude/workflows/` at startup (built-ins always do):
 
 ```
-Workflow({ name: "chatdev-company", args: { prompt: "<your product spec>", target: "./demo" } })
+Workflow({
+  scriptPath: ".claude/workflows/chatdev-company.js",
+  args: { prompt: "<your product spec>", target: "./demo" }
+})
 ```
 
 With no args it builds the **demo target**: a Python todo CLI in `./demo`
 (`add <text>` / `list` / `done <id>`, JSON-persisted, with a `pytest` suite). The slice is
 green when `pytest` in `./demo` exits 0. Widen the company by changing `args.prompt`/`args.target`.
+
+**Prerequisite — pytest:** the workflow runs tests with a repo-local venv python
+(`.venv/bin/python`, gitignored). Create it once:
+`python3 -m venv .venv && .venv/bin/pip install pytest`. To use a different interpreter that
+already has pytest, pass `args.pybin: "/path/to/python"`.
 
 You can also run a single role interactively via the Agent tool (e.g. dispatch `reviewer`
 on the current diff) — the `.claude/agents/*.md` definitions are the canonical, tool-scoped
