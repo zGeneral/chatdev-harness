@@ -16,15 +16,9 @@ import os
 import sys
 import time
 import urllib.error
-import urllib.parse
 import urllib.request
 
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-
-
-def dehex(h):
-    # Inverse of the engine's hexEnc: hex -> ascii (percent-encoded UTF-8) -> text.
-    return urllib.parse.unquote(bytes.fromhex(h).decode("ascii"))
 
 
 def creds():
@@ -70,11 +64,11 @@ def main():
         p.add_argument("--namespace", required=True)
         if c == "search":
             p.add_argument("--query")
-            p.add_argument("--query-hex")  # hex(encodeURIComponent(text)) — safe transport for untrusted text
+            p.add_argument("--query-file")  # read query text from a file (untrusted text never hits the shell)
             p.add_argument("--top-k", type=int, default=5)
         elif c == "store":
             p.add_argument("--text")
-            p.add_argument("--text-hex")
+            p.add_argument("--text-file")
             p.add_argument("--meta", action="append", default=[])
         elif c == "list":
             p.add_argument("--limit", type=int, default=200)
@@ -88,9 +82,9 @@ def main():
         return 0
     try:
         if a.cmd == "search":
-            q = dehex(a.query_hex) if a.query_hex else (a.query or "")
+            q = open(a.query_file, encoding="utf-8").read() if a.query_file else (a.query or "")
             if not q.strip():
-                sys.stderr.write("query (or --query-hex) required\n")
+                sys.stderr.write("query (or --query-file) required\n")
                 return 2
             d = call(url, tok, "/query", {"namespace": a.namespace, "query": q, "top_k": a.top_k})
             ms = d.get("matches", [])
@@ -100,9 +94,9 @@ def main():
             for m in ms:
                 print("- " + (m.get("text") or "").strip())
         elif a.cmd == "store":
-            text = dehex(a.text_hex) if a.text_hex else (a.text or "")
+            text = open(a.text_file, encoding="utf-8").read() if a.text_file else (a.text or "")
             if not text.strip():
-                sys.stderr.write("text (or --text-hex) required\n")
+                sys.stderr.write("text (or --text-file) required\n")
                 return 2
             meta = {}
             for kv in a.meta:
