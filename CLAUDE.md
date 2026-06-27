@@ -9,7 +9,7 @@ smoke-run grepping for `Traceback`.
 **This harness keeps the good idea and fixes the gap: the role-agents have real tools.**
 They write real files (`Write`/`Edit`), run real commands (`Bash`), and pass a real
 `pytest` suite. The success signal is `pytest` exit 0 — behavioral verification, not a
-crash check. See `CHATDEV_UNDERSTANDING.md` for the full concept→harness mapping.
+crash check. See `docs/CHATDEV_UNDERSTANDING.md` for the full concept→harness mapping.
 
 ## The company (roles → `.claude/agents/`)
 Four tool-scoped subagents. For **interactive** Agent-tool use, the `tools:` frontmatter below
@@ -160,5 +160,5 @@ engine calls it best-effort at the end of every graph). Deploy/secrets: `cloudfl
 
 ## Working in this repo (isolation rules)
 - All writes stay inside this repo. **Never modify the original ChatDev reference repo** (read-only reference).
-- The built app goes in `./demo`, kept separate from harness config (`.claude/`, `CLAUDE.md`).
+- Built apps go in `./out/<graph>/` (gitignored), kept separate from harness config (`.claude/`, `CLAUDE.md`).
 - This harness is interactive-first and runs on the Claude subscription — **no `ANTHROPIC_API_KEY`**.

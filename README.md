@@ -116,8 +116,8 @@ auth-gated (`GUI_TOKEN`), with upstream tokens held server-side via service bind
 | [`tools/`](tools/) | `mem.py` (lessons), `rag_search.py` (books), `genimage.py` (art). |
 | [`cloudflare/`](cloudflare/) | The memory Worker + the GUI app. |
 | [`CLAUDE.md`](CLAUDE.md) | Project charter (auto-loaded instructions). |
-| [`CHATDEV_UNDERSTANDING.md`](CHATDEV_UNDERSTANDING.md) | Full ChatDev → harness concept mapping. |
-| [`SUMMARY.md`](SUMMARY.md) · [`docs/build-history/`](docs/build-history/) | Summary · original build log. |
+| [`CHATDEV_UNDERSTANDING.md`](docs/CHATDEV_UNDERSTANDING.md) | Full ChatDev → harness concept mapping. |
+| [`SUMMARY.md`](docs/SUMMARY.md) · [`docs/build-history/`](docs/build-history/) | Summary · original build log. |
 | [`demo/`](demo/) | The built todo CLI + pytest suite (proof artifact). |
 
 ## Credits
