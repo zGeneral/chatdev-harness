@@ -80,6 +80,32 @@ export default {
         });
       }
 
+      if (url.pathname === '/list') {
+        // List raw entries in a namespace from D1 (no vector search) — for consolidation.
+        const namespace = String(body.namespace || 'default');
+        const limit = Math.max(1, Math.min(500, parseInt(body.limit, 10) || 200));
+        const rows = await env.DB.prepare(
+          'SELECT id, text, metadata, created FROM memories WHERE namespace = ? ORDER BY created DESC LIMIT ?'
+        ).bind(namespace, limit).all();
+        const items = (rows.results || []).map((r) => ({ id: r.id, text: r.text, metadata: r.metadata, created: r.created }));
+        return json({ namespace, count: items.length, items });
+      }
+
+      if (url.pathname === '/delete') {
+        // Delete by id list, or the whole namespace when no ids are given.
+        const namespace = String(body.namespace || 'default');
+        let ids = Array.isArray(body.ids) ? body.ids.map(String) : null;
+        if (!ids) {
+          const rows = await env.DB.prepare('SELECT id FROM memories WHERE namespace = ?').bind(namespace).all();
+          ids = (rows.results || []).map((r) => r.id);
+        }
+        if (!ids.length) return json({ namespace, deleted: 0 });
+        await env.VECTORIZE.deleteByIds(ids);
+        const placeholders = ids.map(() => '?').join(',');
+        await env.DB.prepare(`DELETE FROM memories WHERE id IN (${placeholders})`).bind(...ids).run();
+        return json({ namespace, deleted: ids.length });
+      }
+
       return json({ error: 'not found' }, 404);
     } catch (err) {
       return json({ error: String((err && err.message) || err) }, 500);

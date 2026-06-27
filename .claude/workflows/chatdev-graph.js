@@ -128,7 +128,7 @@ async function executeNode(node, message) {
     const q = cfg.query || message
     const text = cfg.text || message
     const topK = cfg.top_k || 5
-    const ENVF = '/Users/hassiba/git/chatdev_harness/.env'
+    const MEMPY = '/Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py'
     if (backend === 'personal-rag') {
       // Private/optional backend: retrieve from a personal-rag notebook via tools/rag_search.py
       // (Worker /api/search; reads the bridge token from ~/.claude.json). The helper prints
@@ -144,17 +144,15 @@ async function executeNode(node, message) {
     }
     if (op === 'store') {
       return await agent(
-        'You have Bash. Load the memory config with `set -a; . ' + ENVF + '; set +a` (sets $MEMORY_URL, $MEMORY_TOKEN). ' +
-        'Then POST the text below to $MEMORY_URL/upsert (header "authorization: Bearer $MEMORY_TOKEN", JSON body ' +
-        '{"namespace":"' + ns + '","text": <the text>}), retrying up to 3x one-at-a-time on any transient/edge error. ' +
-        'Report the returned id.\n\n## Text to store\n' + text,
+        'You have Bash. Store a memory by running tools/mem.py and return its stdout VERBATIM ' +
+        '(it prints "stored id=..." or "MEMORY UNAVAILABLE"). Run:\n  ' + MEMPY + ' store --namespace ' + ns +
+        ' --text <TEXT>\nwhere <TEXT> is this, properly shell-quoted:\n' + text,
         { label: node.id, phase: 'Graph', effort: 'low' })
     }
     return await agent(
-      'You have Bash. Load the memory config with `set -a; . ' + ENVF + '; set +a` (sets $MEMORY_URL, $MEMORY_TOKEN). ' +
-      'Then POST to $MEMORY_URL/query (header "authorization: Bearer $MEMORY_TOKEN", JSON body ' +
-      '{"namespace":"' + ns + '","query": <the query>, "top_k": ' + topK + '}) and return the retrieved snippets\' text ' +
-      'as concise bullets. If the result is empty, reply exactly "no relevant memory".\n\n## Query\n' + q,
+      'You have Bash. Retrieve memories by running tools/mem.py and return its stdout VERBATIM ' +
+      '(it prints bullets, or exactly "no relevant memory" / "MEMORY UNAVAILABLE"). Run:\n  ' + MEMPY + ' search --namespace ' + ns +
+      ' --top-k ' + topK + ' --query <QUERY>\nwhere <QUERY> is this, properly shell-quoted:\n' + q,
       { label: node.id, phase: 'Graph', effort: 'low' })
   }
   if (type === 'subgraph') {

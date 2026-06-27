@@ -1,0 +1,51 @@
+# Consolidation / maintenance pass for the factory's experiential memory (chatdev-memory).
+# Keeps the `lessons:gamedev` namespace SHARP: dedupe near-duplicates, merge overlaps, drop stale
+# or low-value entries — so retrieval stays high-signal as lessons accumulate.
+#   fetch (list all) -> merge (agent dedupes/merges) -> apply (replace namespace with the merged set)
+# Run periodically (a maintenance op, ideally when idle):  /run-graph graphs/consolidate_lessons.yaml
+# Note: apply REPLACES the namespace (delete then store the merged set) — a brief empty window; the
+# store is experiential (regenerable from future green builds), so this is acceptable for v1.
+graph:
+  id: consolidate_lessons
+  description: fetch(list) -> merge(dedupe/merge) -> apply(replace namespace)
+  nodes:
+    - id: fetch
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. List every current lesson by running:
+            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py list --namespace lessons:gamedev --limit 300
+          Return its stdout VERBATIM (a JSON object with count + items[].text). If it prints
+          "MEMORY UNAVAILABLE", return exactly that.
+
+    - id: merge
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the curator of the factory's lessons. The upstream message lists the current lessons.
+          Produce a CONSOLIDATED set: merge near-duplicates into one crisp lesson, combine overlapping
+          ones, drop anything stale, vague, or game-specific (lessons must be GENERAL + reusable +
+          technical), and keep each as ONE atomic sentence. Aim for the smallest high-signal set (do not
+          pad). If the input was "MEMORY UNAVAILABLE" or empty, output exactly "NOTHING TO CONSOLIDATE".
+          Otherwise output ONLY the final consolidated lessons, one per line, each starting with "- ".
+
+    - id: apply
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. The upstream message is the consolidated lesson set (lines starting with "- "),
+          or "NOTHING TO CONSOLIDATE".
+          If it is "NOTHING TO CONSOLIDATE": do nothing and report that.
+          Otherwise REPLACE the namespace with the consolidated set:
+            1) Delete the old entries:
+               /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py delete --namespace lessons:gamedev
+            2) Store each consolidated lesson (one call per line, drop the leading "- "):
+               /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py store --namespace lessons:gamedev --text "<lesson>" --meta source=consolidation
+          Report how many you deleted and how many you stored.
+
+  edges:
+    - { from: fetch, to: merge }
+    - { from: merge, to: apply }

@@ -150,6 +150,22 @@ trace. `graphs/demo_build.yaml` is a working example (spec → builder(TDD, real
   (e.g. `game-design`). **Gracefully degrades** to "MEMORY UNAVAILABLE" if no creds, so it never breaks a clone.
 - `op: retrieve` returns the matched snippets as context for downstream nodes; `op: store` saves text.
   `graphs/memory_demo.yaml` is a working example (recall game-design principles → apply them).
+- Helpers: the cloudflare backend uses `tools/mem.py` (search/store/list/delete, with retry); the
+  personal-rag backend uses `tools/rag_search.py`. Both read creds from `.env` / the bridge config and
+  print `MEMORY UNAVAILABLE` when absent (graceful degrade).
+
+### Self-improving game factory (two memory roles)
+The two backends play distinct roles by design:
+- **personal-rag `game-design` notebook = external knowledge** (the books — semantic memory).
+- **chatdev-memory `lessons:gamedev` namespace = the factory's own experience** (procedural memory that
+  grows every green build).
+
+`graphs/game_factory_learning.yaml` closes the loop: **recall** (books + past lessons) → design → core →
+polish → qa → **verify** → **reflect**. The `reflect` step distills 1–3 atomic, generalizable lessons and
+**stores them only when the build went green** (verified-only — the test signal is the quality filter), so
+future builds get better. `graphs/consolidate_lessons.yaml` is the maintenance pass (list → dedupe/merge →
+replace the namespace) that keeps the lessons store high-signal as it accumulates. Keep curated reference
+material (books) in personal-rag; let the factory's self-generated lessons live in chatdev-memory.
 
 Not ported from 2.0 (deliberate): the Vue **visual graph editor** (Claude Code's native UI replaces it)
 and **multi-provider** models (Claude subscription only).

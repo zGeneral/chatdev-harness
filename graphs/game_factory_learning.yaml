@@ -1,0 +1,128 @@
+# Self-improving game factory — the closed loop.
+#   recall (books from personal-rag + lessons from chatdev-memory) -> design -> core(TDD) ->
+#   [PASS] polish -> qa -> verify -> reflect (distill + STORE verified lessons) ; [FAIL] -> gate -> core
+# Two memory roles, as designed:
+#   - personal-rag `game-design` notebook = external knowledge (books).
+#   - chatdev-memory `lessons:gamedev`    = the factory's own experience (grows every green build).
+# Verified-only: reflect stores lessons ONLY when the build went green (objective test signal).
+# Builds into ./learndemo. Run:  /run-graph graphs/game_factory_learning.yaml
+graph:
+  id: game_factory_learning
+  description: recall(books+lessons) -> design -> core -> polish -> qa -> verify -> reflect(store)
+  nodes:
+    - id: brief
+      type: literal
+      config:
+        content: |
+          Build a small, polished arcade game in Python+Pygame in ./learndemo: "Fruit Catch" — a
+          basket at the bottom moves left/right (arrow keys, clamped to the screen), fruit falls from
+          random x at increasing speed, catching fruit scores +1, a missed fruit ends the game, R
+          restarts, never a pure-black background, 60 FPS via Clock, clean QUIT.
+
+    - id: recall
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. The upstream message is the GAME BRIEF. Gather grounding, then output the
+          ORIGINAL brief followed by two sections. Run BOTH (return their output; if one prints
+          "MEMORY UNAVAILABLE" or "no relevant memory", just note that and continue):
+            # external design knowledge (books):
+            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/rag_search.py --notebook game-design --top-k 5 --query "designing a clear, fair, juicy arcade catch/dodge game: readability, feedback, difficulty pacing"
+            # lessons from past builds:
+            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py search --namespace lessons:gamedev --top-k 6 --query "building a testable pygame arcade game in this harness: logic/render split, headless smoke, pytest pitfalls"
+          Output exactly:
+          <the original brief>
+
+          ## Design knowledge (books)
+          <rag_search output>
+
+          ## Lessons from past builds
+          <mem.py output>
+
+    - id: design
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the game designer/architect. From the brief + the "Design knowledge (books)" + the
+          "Lessons from past builds" upstream, produce a concrete implementation spec for ./learndemo:
+          pure logic.py (no pygame: basket clamp, fruit spawn/fall, catch/miss, scoring, state) with a
+          pytest suite; game.py (Pygame shell + a HEADLESS SMOKE MODE: when env GAME_SMOKE_FRAMES=N is
+          set, run N frames under SDL_VIDEODRIVER=dummy then quit cleanly). EXPLICITLY apply any
+          relevant past lessons (say which). Use the book knowledge for feel/readability/pacing.
+
+    - id: core
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the Programmer with REAL tools. Build ./learndemo per the upstream spec, TDD: write
+          tests/test_logic.py first (pure logic, no pygame), then logic.py, then game.py with the
+          GAME_SMOKE_FRAMES headless smoke mode. Verify BOTH:
+            cd learndemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q
+            cd learndemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 /Users/hassiba/git/chatdev_harness/.venv/bin/python game.py
+          Iterate until pytest exits 0 AND the headless run exits 0.
+        instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if pytest exit 0 AND headless smoke exit 0, else "RESULT: FAIL".'
+
+    - id: gate
+      type: loop_counter
+      config: { max_iterations: 2 }
+
+    - id: polish
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the Polish Developer. Improve ./learndemo/game.py ONLY (clear rendering, HUD, feedback)
+          WITHOUT breaking the headless smoke mode, the mandatory reqs, or moving logic out of logic.py.
+          Re-run pytest + the headless GAME_SMOKE_FRAMES run; both must stay green.
+        instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if both gates still pass, else "RESULT: FAIL".'
+
+    - id: qa
+      type: agent
+      config:
+        agentType: feature-dev:code-reviewer
+        role: |
+          Review ./learndemo: logic.py pygame-free and tested, headless smoke mode present, mandatory
+          reqs met (no pure-black bg, R restart, 60 FPS, clean QUIT). List concrete issues or say LGTM. Read-only.
+
+    - id: verify
+      type: agent
+      config:
+        effort: low
+        role: |
+          Run BOTH and report, editing nothing:
+            cd learndemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q
+            cd learndemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 /Users/hassiba/git/chatdev_harness/.venv/bin/python game.py; echo "SMOKE_EXIT=$?"
+          Report logic tests passed/total, pytest exit, and smoke exit.
+
+    - id: reflect
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the Reflection step that makes the factory self-improving. The upstream message is the
+          verify outcome. You have Bash; read ./learndemo/logic.py, game.py, and tests/test_logic.py to
+          ground your reflection.
+          VERIFIED-ONLY RULE: only store SUCCESS lessons if the build was GREEN (pytest exit 0 AND smoke
+          exit 0 in the verify outcome). If it was NOT green, do not store success lessons; you may store
+          ONE anti-pattern lesson if there is a clear, avoidable mistake (tag it).
+          Distill 1-3 ATOMIC, GENERALIZABLE, TECHNICAL lessons useful for FUTURE pygame game builds in
+          THIS harness (e.g. logic/render separation, the headless-smoke pattern, a pytest pitfall, a
+          determinism trick). Each lesson must be ONE reusable sentence — NOT a description of this game.
+          Store each with Bash (one at a time):
+            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py store --namespace lessons:gamedev --text "<lesson>" --meta source=fruit-catch
+          (for an anti-pattern add --meta kind=antipattern). Then report exactly what you stored (or that
+          you stored nothing because the build was not green).
+
+  edges:
+    - { from: brief, to: recall }
+    - { from: recall, to: design }
+    - { from: design, to: core }
+    - { from: core, to: polish, condition: "contains:PASS" }
+    - { from: core, to: gate, condition: "contains:FAIL" }
+    - { from: gate, to: core }
+    - { from: polish, to: qa }
+    - { from: qa, to: verify }
+    - { from: verify, to: reflect }
