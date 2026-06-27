@@ -43,7 +43,19 @@ artifacts land in throwaway dirs under `chatdev_harness/`.
   one stage graph at a time and inspect the gate.
 
 ## Status
-- [x] engine `join` fan-in + unit-tested
-- [x] memory grounding ingested (oforge-lessons, game-design)
-- [x] `ideate.yaml` authored + **verified on Tandem (real oracle/census)**
-- [ ] `foundation, difficulty, content, shell, share, ship, rebalance, pipeline` authored + validated
+- [x] engine `join` fan-in + unit-tested (councils); existing graphs unaffected
+- [x] memory grounding ingested (personal-rag `oforge-lessons` = LESSONS+PIPELINE+CANON; `game-design` = books)
+- [x] self-contained: oracleforge agents + solver/engine/ops templates vendored under `vendor/`
+- [x] portable: zero hardcoded absolute paths (relative from repo root; build steps capture `ROOT=$PWD`)
+- [x] all 8 stage graphs authored + parse/structure-validated; browsable in the GUI
+- [x] `ideate.yaml` **run-verified on Tandem** (real oracle/census executes)
+- [x] `memory_demo` run-verified on the refactored (relative-path) engine
+- [~] `foundation/difficulty/content/shell/share/ship/rebalance` authored + structurally validated; share
+      every run-verified primitive with ideate (recall, vendored-agent reads, build→verify loop, reflect),
+      but not each run end-to-end (a full stage run builds/ships a whole game — run them per-game as needed)
+
+## How to run
+- One stage: `/run-graph graphs/oracleforge/<stage>.yaml` with `args.input` = that stage's input
+  (an idea/spec for ideate; the prior stage's output for later stages), or browse/run via the GUI.
+- Full pipeline = the 8 graphs in order, gating between them (the engine doesn't self-invoke sub-workflows
+  — by sandbox design — so stages are driven one at a time, as oracleforge itself does).
