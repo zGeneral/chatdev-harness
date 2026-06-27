@@ -186,7 +186,9 @@ graph:
           insight (revelation certificate). Run the baker to write out/factory/pack.json (every insight covered)
           and out/factory/rejections.json (per-gate census). Add out/factory/content.test.js asserting: pack.json
           exists, EVERY curriculum insight has >=1 level, and each packed level is solvable+unique via the
-          solver. On a FAIL retry, fix. End "CONTENT: BUILT".
+          solver. On a FAIL retry, fix; if the upstream is a PLAYABILITY: WEAK report, RE-BAKE to raise the
+          named weak dimension (e.g. add higher-par levels for the ramp, or levels needing more technique
+          tiers / more decision depth). End "CONTENT: BUILT".
 
     - id: content_verify
       type: agent
@@ -198,6 +200,35 @@ graph:
           solvability tests green), else "CONTENT: FAIL" + the failing tests.
 
     - id: con_gate
+      type: loop_counter
+      config: { max_iterations: 2 }
+
+    # ---- STAGE 3.5: PLAYABILITY GATE ("is this worth playing?" — MEASURED) ----
+    - id: playability
+      type: agent
+      config:
+        effort: high
+        role: |
+          PLAYABILITY GATE. REAL tools, cwd = repo root. FIRST Read graphs/oracleforge/design/playability.md.
+          Using the SAME solver/engine the pipeline built, MEASURE the baked pack (out/factory/pack.json): write
+          out/factory/playability.js computing — par distribution (ramp), unique-optimal %, greedy/straight-aim
+          regret %, technique-tier spread, pack size vs curriculum — and write out/factory/playability.json (the
+          measured report). Add out/factory/playability.test.js (node --test) asserting the PASS thresholds from
+          playability.md §gate (par spans >=3 values; >=50% unique-optimal; greedy regret on >=25% of par>=2
+          levels; >=2 technique tiers; pack size >= insight count). Do NOT edit the pack here — if it's WEAK,
+          report which dimension so content re-bakes. End with "PLAYABILITY: BUILT".
+
+    - id: playability_verify
+      type: agent
+      config:
+        effort: low
+        role: |
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
+          2>&1; echo "NODE_EXIT=$?". Read out/factory/playability.json. End with EXACTLY "PLAYABLE: PASS" if
+          NODE_EXIT=0 (all playability thresholds met), else "PLAYABLE: WEAK" + the failing dimension(s) and the
+          measured numbers (so the content stage can re-bake to fix it).
+
+    - id: play_gate
       type: loop_counter
       config: { max_iterations: 2 }
 
@@ -365,10 +396,15 @@ graph:
     - { from: dif_gate, to: difficulty }
     - { from: dif_gate, to: blocked_build, condition: "exhausted" }
     - { from: content, to: content_verify }
-    - { from: content_verify, to: shell, condition: "regex:(^|\\n)CONTENT: PASS\\s*$" }
+    - { from: content_verify, to: playability, condition: "regex:(^|\\n)CONTENT: PASS\\s*$" }
     - { from: content_verify, to: con_gate, condition: "default" }
     - { from: con_gate, to: content }
     - { from: con_gate, to: blocked_build, condition: "exhausted" }
+    - { from: playability, to: playability_verify }
+    - { from: playability_verify, to: shell, condition: "regex:(^|\\n)PLAYABLE: PASS\\s*$" }
+    - { from: playability_verify, to: play_gate, condition: "default" }
+    - { from: play_gate, to: content }
+    - { from: play_gate, to: blocked_build, condition: "exhausted" }
     - { from: shell, to: shell_verify }
     - { from: shell_verify, to: share, condition: "regex:(^|\\n)SHELL: PASS\\s*$" }
     - { from: shell_verify, to: shl_gate, condition: "default" }
