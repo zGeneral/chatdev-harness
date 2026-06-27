@@ -28,9 +28,9 @@ graph:
           ORIGINAL brief followed by two sections. Run BOTH (return their output; if one prints
           "MEMORY UNAVAILABLE" or "no relevant memory", just note that and continue):
             # external design knowledge (books):
-            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/rag_search.py --notebook game-design --top-k 5 --query "designing a clear, fair, juicy arcade catch/dodge game: readability, feedback, difficulty pacing"
+            .venv/bin/python tools/rag_search.py --notebook game-design --top-k 5 --query "designing a clear, fair, juicy arcade catch/dodge game: readability, feedback, difficulty pacing"
             # lessons from past builds:
-            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py search --namespace lessons:gamedev --top-k 6 --query "building a testable pygame arcade game in this harness: logic/render split, headless smoke, pytest pitfalls"
+            .venv/bin/python tools/mem.py search --namespace lessons:gamedev --top-k 6 --query "building a testable pygame arcade game in this harness: logic/render split, headless smoke, pytest pitfalls"
           Output exactly:
           <the original brief>
 
@@ -60,8 +60,8 @@ graph:
           You are the Programmer with REAL tools. Build ./learndemo per the upstream spec, TDD: write
           tests/test_logic.py first (pure logic, no pygame), then logic.py, then game.py with the
           GAME_SMOKE_FRAMES headless smoke mode. Verify BOTH:
-            cd learndemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q
-            cd learndemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 /Users/hassiba/git/chatdev_harness/.venv/bin/python game.py
+            ROOT="$PWD"; cd learndemo && "$ROOT/.venv/bin/python" -m pytest -q
+            ROOT="$PWD"; cd learndemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 "$ROOT/.venv/bin/python" game.py
           Iterate until pytest exits 0 AND the headless run exits 0.
         instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if pytest exit 0 AND headless smoke exit 0, else "RESULT: FAIL".'
 
@@ -93,8 +93,8 @@ graph:
         effort: low
         role: |
           Run BOTH and report, editing nothing:
-            cd learndemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q
-            cd learndemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 /Users/hassiba/git/chatdev_harness/.venv/bin/python game.py; echo "SMOKE_EXIT=$?"
+            ROOT="$PWD"; cd learndemo && "$ROOT/.venv/bin/python" -m pytest -q
+            ROOT="$PWD"; cd learndemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 "$ROOT/.venv/bin/python" game.py; echo "SMOKE_EXIT=$?"
           Report logic tests passed/total, pytest exit, and smoke exit.
 
     - id: reflect
@@ -112,7 +112,7 @@ graph:
           THIS harness (e.g. logic/render separation, the headless-smoke pattern, a pytest pitfall, a
           determinism trick). Each lesson must be ONE reusable sentence — NOT a description of this game.
           Store each with Bash (one at a time):
-            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py store --namespace lessons:gamedev --text "<lesson>" --meta source=fruit-catch
+            .venv/bin/python tools/mem.py store --namespace lessons:gamedev --text "<lesson>" --meta source=fruit-catch
           (for an anti-pattern add --meta kind=antipattern). Then report exactly what you stored (or that
           you stored nothing because the build was not green).
 

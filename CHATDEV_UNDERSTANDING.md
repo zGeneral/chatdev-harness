@@ -1,6 +1,6 @@
 # Understanding ChatDev — and what the harness reimplements
 
-Reference (read-only): `/Users/hassiba/git/chatdev`. The classic "virtual software
+Reference (read-only): the original ChatDev source repo. The classic "virtual software
 company" engine lives on the **`chatdev1.0`** branch (the current main branch is a
 2.0 YAML-graph rewrite). Paper: Wu et al., *Communicative Agents for Software
 Development* (ChatDev). This document caches the architecture so we never re-read the repo.

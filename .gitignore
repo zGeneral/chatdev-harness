@@ -23,3 +23,7 @@ cloudflare/**/node_modules/
 .DS_Store
 *.log
 .venv/
+
+# oracleforge stage-graph build artifacts (throwaway)
+oracleprobe/
+*_build/

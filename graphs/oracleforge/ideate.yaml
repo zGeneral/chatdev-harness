@@ -1,0 +1,182 @@
+# oracleforge → ChatDev-harness graph: IDEATION + ORACLE-FIT (Pre-Stage-0 + Stage-0).
+# Maps oracleforge/workflows/idea-to-beta.workflow.js (council + dossier) onto our engine AND adds
+# the harness's key upgrade: a REAL oracle/yield-census that EXECUTES (closing LESSONS.md #29
+# "a gate you tick yourself is a gate you skipped" and #32 "a tractable certifier can still starve").
+#
+# Flow: target -> recall(lessons+books) -> [council: 4 independent critics] -> synthesize(join)
+#       -> [GO] oracle_probe (build+RUN engine+BFS+census) -> verdict -> reflect(store lesson)
+#       -> [NO-GO] reject
+#
+# Run (validate an existing spec):  /run-graph graphs/oracleforge/ideate.yaml  with
+#   args.input = "<path to an IDEA spec .md>"   (e.g. a Tandem spec)
+# Run (design new):                  args.input = "<a game idea / twist to design>"
+# Roles + solver/engine templates are VENDORED under graphs/oracleforge/vendor/ (self-contained);
+# build artifacts land in ./oracleprobe/.
+graph:
+  id: ideate
+  description: ideation + oracle-fit with a REAL executed yield-census (oracleforge Stage 0)
+  nodes:
+    - id: target
+      type: agent
+      config:
+        effort: low
+        role: |
+          You bootstrap oracleforge ideation. The input below may be: (a) a PATH to an existing IDEA spec
+          to VALIDATE, (b) a game idea/twist to DESIGN, or (c) empty. If it is a path that exists, use the
+          Read tool to read it and output its FULL content prefixed with a first line "MODE: validate".
+          Otherwise output "MODE: design" then the idea text. If empty, output "MODE: design" + a note that
+          no idea was supplied. Keep it to the spec/idea content; add nothing else.
+
+    - id: recall
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. The upstream message is the target game (a spec or idea). Gather grounding and
+          output the ORIGINAL upstream message UNCHANGED, then two sections. Run BOTH (return their output;
+          if one says "MEMORY UNAVAILABLE"/"no relevant memory", note it and continue):
+            .venv/bin/python tools/rag_search.py --notebook oforge-lessons --top-k 6 --query "<short query about THIS game's core mechanic: oracle-fit, determinism, yield/starvation, twist divergence>"
+            .venv/bin/python tools/rag_search.py --notebook game-design --top-k 4 --query "<short query about THIS game's puzzle/casual design: clarity, difficulty, the aha>"
+          Output exactly:
+          <original upstream message>
+
+          ## Ideation lessons (oracleforge scar tissue)
+          <first rag_search output>
+
+          ## Design principles (books)
+          <second rag_search output>
+
+    - id: critic_determinism
+      type: agent
+      config:
+        effort: medium
+        role: |
+          First use Read on graphs/oracleforge/vendor/agents/mechanics-critic.md for your full critic brief.
+          Then be a HOSTILE reviewer of the target game (upstream), attacking the angle of DETERMINISM and
+          tick-order ambiguity: the game must host an EXACT SOLVER (deterministic plan-then-run, discrete
+          ticks, no play-time RNG/hidden info/continuous state). Begin your reply with EXACTLY one line:
+          "VERDICT: fit" or "VERDICT: redesign" or "VERDICT: unfit". Then sections: BREAKS (concrete failure
+          constructions), SURVIVABLE-WITH (redesigns that restore solvability). Be specific and independent.
+
+    - id: critic_completeness
+      type: agent
+      config:
+        effort: medium
+        role: |
+          First Read graphs/oracleforge/vendor/agents/mechanics-critic.md. Then hostilely review the
+          target game (upstream) from the angle of SEARCH COMPLETENESS — winning lines a lazy/pruned solver
+          could miss, and whether the pruning argument is sound. Begin with EXACTLY one line:
+          "VERDICT: fit" / "VERDICT: redesign" / "VERDICT: unfit". Then BREAKS and SURVIVABLE-WITH. Be independent.
+
+    - id: critic_tractability
+      type: agent
+      config:
+        effort: medium
+        role: |
+          First Read graphs/oracleforge/vendor/agents/mechanics-critic.md. Then hostilely review the
+          target game (upstream) from the angle of TRACTABILITY — branching factor, state-space growth,
+          move-space size, whether BFS/IDDFS stays within a node budget at shipped scale. Begin with EXACTLY
+          one line: "VERDICT: fit" / "VERDICT: redesign" / "VERDICT: unfit". Then BREAKS and SURVIVABLE-WITH. Be independent.
+
+    - id: critic_divergence
+      type: agent
+      config:
+        effort: medium
+        role: |
+          First use Read on graphs/oracleforge/vendor/agents/divergence-critic.md (if absent, judge from
+          first principles). Then assess the target game's NOVELTY/orthogonality vs its source: does deleting
+          a rule collapse the puzzles? residual-similarity vs the source (≤60% bar)? how many genuinely-new
+          insight classes? Begin with EXACTLY one line: "VERDICT: fit" / "VERDICT: redesign" / "VERDICT: unfit"
+          (here "fit" = sufficiently divergent/novel). Then a short pillar table + residual estimate. Be independent.
+
+    - id: synthesize
+      join: true
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the SYNTHESIZER. The upstream contains FOUR independent critic verdicts (determinism,
+          completeness, tractability, divergence), each beginning with a "VERDICT:" line. First use Read on
+          graphs/oracleforge/vendor/agents/synthesizer.md if present. Decide:
+          - If >=2 critics say "unfit" -> this is a NO-GO.
+          - Otherwise adopt the critics' survivable redesigns and produce the frozen artifact.
+          Output, in order: a first line that is EXACTLY "COUNCIL: GO" or "COUNCIL: NO-GO"; then a brief
+          SYNTHESIS with (a) FROZEN RULE SET (minimal axioms), (b) ORACLE SKETCH (state / move set / win
+          predicate / pruning argument), (c) the GOLDEN TRACE if the spec provides one, and (d) the kill memo
+          if NO-GO. Preserve enough rule detail that an engineer can implement the engine + solver from it.
+
+    - id: oracle_probe
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the ORACLE ENGINEER with REAL tools. This is the harness's key upgrade over a self-certified
+          gate: BUILD and RUN a real oracle + yield census for the synthesized game (upstream), in Python,
+          into ./oracleprobe/ . Reference the patterns in graphs/oracleforge/vendor/templates/solver/solver.js
+          (lazy IDDFS, prune on visited cells, uniqueness via countSolutions) and graphs/oracleforge/vendor/templates/engine/simulation.js
+          (deterministic plan-then-run, fixed tick order, pure stepTick).
+          Implement (pure, no RNG at solve time):
+            1. logic.py — the deterministic engine for the frozen rules (state, the move/step resolution, the
+               win predicate), exactly per the spec; include the spec's GOLDEN TRACE as a behaviour.
+            2. solver in logic.py — BFS/IDDFS returning the minimum solution length AND a solution count
+               (uniqueness), memoized on a canonical state key, bounded by a node budget.
+            3. census.py — a YIELD CENSUS: with a SEEDED rng, generate N (>=300) random small valid boards,
+               run the solver on each, and measure: solvable %, unique-optimal % (count==1 among optimal),
+               and straight-aim regret % (a greedy "aim straight at the goal" baseline's extra cost vs optimal
+               on >=2-move boards), plus node-budget overflow count.
+            4. tests/test_logic.py — pytest pinning the GOLDEN TRACE + a stall/edge case + a win-predicate case.
+          Run BOTH and read real output:
+            ROOT="$PWD"; cd oracleprobe && "$ROOT/.venv/bin/python" -m pytest -q
+            ROOT="$PWD"; cd oracleprobe && "$ROOT/.venv/bin/python" census.py
+          If the spec already CLAIMS census numbers, compare your MEASURED numbers against them.
+        instruction: |
+          Finish with EXACTLY one final line: "ORACLE: PASS" if pytest exits 0 (golden trace passes) AND the
+          census shows non-degenerate yield (a healthy solvable band, some unique-optimal boards, regret>0 on
+          non-trivial boards, zero node-budget overflow), else "ORACLE: FAIL" with the reason.
+
+    - id: verdict
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You are the lead designer. Combine the council synthesis with the MEASURED oracle/census result
+          (upstream). Produce the final oracle-fit assessment: state ACCEPT or REJECT; the frozen rules in
+          one paragraph; the MEASURED census numbers (solvable%, unique-optimal%, straight-aim regret%) and,
+          if the spec claimed numbers, whether the measured numbers corroborate them; and one line on why this
+          gate is now PROVEN by execution rather than self-certified.
+
+    - id: reflect
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Distill ONE atomic, generalizable IDEATION lesson from this run (a reusable insight
+          about oracle-fit, yield/starvation, divergence, or the build-and-measure gate — NOT a description of
+          this specific game). Store it: (1) Bash: mkdir -p .runtmp && chmod 700 .runtmp ;
+          (2) Write the lesson text to .runtmp/ideation_lesson.txt ;
+          (3) Bash: .venv/bin/python tools/mem.py store --namespace lessons:ideation --text-file .runtmp/ideation_lesson.txt --meta source=ideate ;
+          (4) Bash: rm -f .runtmp/ideation_lesson.txt . Report the lesson stored.
+
+    - id: reject
+      type: agent
+      config:
+        effort: low
+        role: |
+          The council returned NO-GO (upstream). Summarize the kill reason concisely (which invariant failed,
+          which critics broke it), and state the redesign direction or that the idea should be parked. This is
+          a healthy outcome — a gate that can kill is a real gate.
+
+  edges:
+    - { from: target, to: recall }
+    - { from: recall, to: critic_determinism }
+    - { from: recall, to: critic_completeness }
+    - { from: recall, to: critic_tractability }
+    - { from: recall, to: critic_divergence }
+    - { from: critic_determinism, to: synthesize }
+    - { from: critic_completeness, to: synthesize }
+    - { from: critic_tractability, to: synthesize }
+    - { from: critic_divergence, to: synthesize }
+    - { from: synthesize, to: oracle_probe, condition: "contains:COUNCIL: GO" }
+    - { from: synthesize, to: reject, condition: "contains:NO-GO" }
+    - { from: oracle_probe, to: verdict }
+    - { from: verdict, to: reflect }

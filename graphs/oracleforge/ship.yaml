@@ -1,0 +1,73 @@
+# oracleforge → graph: STAGE 6 — SHIP (PIPELINE.md §278-291). [Beta gate]
+# Build the deliverable: a PWA (precache service worker, skipWaiting+claim, version-sync) + ONE Cloudflare
+# Worker (static assets + comments API + hint-allowance per-IP-hash daily scarcity + regret probe). Real
+# gate: smoke tests (page 200 / comment 204 / junk 400 / hint scarcity 429) + version-sync, run against a
+# LOCAL dev server. The actual `wrangler deploy` is a main-loop / human step (deploys don't run in-graph).
+#
+# Input (args.input): the shell + level pack + codec (Stage 4/5 output), or a path.
+# Artifacts land in ./ship_build/ . oracleforge is read-only reference.
+graph:
+  id: ship
+  description: Stage 6 — PWA + Cloudflare Worker, gated by local smoke tests + version-sync
+  nodes:
+    - id: recall
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Upstream = shell + pack + codec (Read if a path). Output it UNCHANGED, then a
+          "## Ship lessons" section from (tolerate "no relevant memory"/"MEMORY UNAVAILABLE"):
+            .venv/bin/python tools/rag_search.py --notebook oforge-lessons --top-k 5 --query "PWA precache, service worker version sync, cloudflare worker, hint allowance, IP-hash daily scarcity, regret probe, smoke tests"
+
+    - id: build_ship
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the SHIP ENGINEER with REAL tools, building into ./ship_build/ . Reference
+          graphs/oracleforge/vendor/templates/ops/worker.js for the Worker shape. Produce:
+            - a PWA: a precache-everything service worker (skipWaiting + clients.claim) and a version-sync
+              mechanism (the SW version matches the build) with a version-sync test.
+            - ONE Cloudflare Worker (src/) : serves static assets, POST /api/comment (validate -> store -> 204,
+              junk -> 400), POST /api/hint (salted hash of IP + UTC day, HINTS_PER_DAY grant, 429 on scarcity,
+              no raw IP / no cookies), GET /api/comments (token-gated). Feedback carries a 1-5 rating + a REGRET
+              probe ("worth your time?") + replay logs.
+            - smoke tests runnable against a LOCAL dev server (e.g. wrangler dev / a stub), and a clear note
+              that production `wrangler deploy` is a separate main-loop step.
+          On a FIX pass the upstream has failing output — fix the cause.
+        instruction: |
+          Run the smoke tests against the local server. End with EXACTLY "SHIP: PASS" if all smoke checks pass
+          (page 200, comment 204, junk 400, hint scarcity 429, version-sync green), else "SHIP: FAIL" + which failed.
+
+    - id: gate
+      type: loop_counter
+      config:
+        max_iterations: 3
+
+    - id: ethics_reaudit
+      type: agent
+      config:
+        effort: medium
+        role: |
+          First use Read on graphs/oracleforge/vendor/agents/ethics-auditor.md. Re-run the dark-pattern
+          audit on the SHIPPING surfaces (hint scarcity must be honest scarcity, not manipulation; the regret
+          probe must be real; comments not engagement-baited). End with EXACTLY "ETHICS: CLEAN" or "ETHICS: ISSUES" + the table.
+
+    - id: reflect
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Distill ONE generalizable SHIP lesson (PWA version-sync, honest hint scarcity,
+          privacy-preserving rate limits, smoke-gating) and store it: (1) Bash: mkdir -p .runtmp && chmod 700 .runtmp ;
+          (2) Write it to .runtmp/ship_lesson.txt ;
+          (3) Bash: .venv/bin/python tools/mem.py store --namespace lessons:ship --text-file .runtmp/ship_lesson.txt --meta source=ship ;
+          (4) Bash: rm -f .runtmp/ship_lesson.txt . Report the lesson.
+
+  edges:
+    - { from: recall, to: build_ship }
+    - { from: build_ship, to: ethics_reaudit, condition: "contains:SHIP: PASS" }
+    - { from: build_ship, to: gate, condition: "default" }
+    - { from: gate, to: build_ship }
+    - { from: ethics_reaudit, to: reflect, condition: "contains:ETHICS: CLEAN" }
+    - { from: ethics_reaudit, to: gate, condition: "default" }

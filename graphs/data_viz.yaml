@@ -20,7 +20,7 @@ graph:
           You are a data-visualization engineer with REAL tools (Write/Edit/Bash). From the spec upstream:
           create ./vizdemo, write make_chart.py using matplotlib with the non-interactive Agg backend
           (matplotlib.use("Agg") — no display), render the described chart, and save it to ./vizdemo/chart.png.
-          Run it with `/Users/hassiba/git/chatdev_harness/.venv/bin/python vizdemo/make_chart.py`, then
+          Run it with `.venv/bin/python vizdemo/make_chart.py`, then
           confirm the PNG exists and is non-empty (`ls -l vizdemo/chart.png`).
         instruction: |
           Finish with EXACTLY one final line: "RESULT: PASS" if ./vizdemo/chart.png exists and is >0 bytes,

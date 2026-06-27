@@ -1,0 +1,56 @@
+# oracleforge → graph: STAGE 7 — BETA REBALANCE (maps oracleforge/workflows/nightly-rebalance.workflow.js,
+# PIPELINE.md §292-324). Turn a week of beta comments × metrics into a tuning brief and a concrete re-bake
+# worklist. The analyst + curator are LLM passes over real data; applying the edits, re-baking, and
+# redeploying is the main-loop step (long Bash + deploy stay out of the graph).
+#
+# Input (args.input): the comments + metrics table (JSON/markdown), or a path to them.
+graph:
+  id: rebalance
+  description: Stage 7 — playtest analysis + re-bake worklist from beta comments × metrics
+  nodes:
+    - id: recall
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Upstream = beta comments + metrics (Read it if a path). Output it UNCHANGED, then a
+          "## Tuning lessons" section from (tolerate "no relevant memory"/"MEMORY UNAVAILABLE"):
+            .venv/bin/python tools/rag_search.py --notebook oforge-lessons --top-k 5 --query "beta loop, RITE cadence, difficulty refit, regret rate, cheap-hard levels, playtest analysis"
+
+    - id: analyze
+      type: agent
+      config:
+        effort: high
+        role: |
+          First use Read on graphs/oracleforge/vendor/agents/playtest-analyst.md for your full brief. Then
+          produce the six-section tuning brief from the comments × metrics (upstream): calibration block, the
+          failure-metrics battery (time-to-solve, attempts, session-ending event, hint uptake, retry latency,
+          REGRET rate, stress), a refit of the difficulty model (regress observed solve rates vs the contract's
+          vectors; flag deviant levels), cheap-hard flags, and the prioritized tuning list. Evidence-cited.
+
+    - id: worklist
+      type: agent
+      config:
+        effort: medium
+        role: |
+          First Read graphs/oracleforge/vendor/agents/level-curator.md. Then turn the analyst brief
+          (upstream) into a CONCRETE re-bake worklist: per flagged level, the baker-config edits (parameter
+          deltas) and the probe commands to re-run, plus which levels to cut. Output a checklist the main loop
+          can execute (apply edits -> re-bake -> redeploy). Note explicitly that applying + re-baking +
+          redeploying is a main-loop step, not done here.
+
+    - id: reflect
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Distill ONE generalizable TUNING lesson (about beta-loop analysis / difficulty refit /
+          regret) and store it: (1) Bash: mkdir -p .runtmp && chmod 700 .runtmp ;
+          (2) Write it to .runtmp/rebalance_lesson.txt ;
+          (3) Bash: .venv/bin/python tools/mem.py store --namespace lessons:rebalance --text-file .runtmp/rebalance_lesson.txt --meta source=rebalance ;
+          (4) Bash: rm -f .runtmp/rebalance_lesson.txt . Report the lesson.
+
+  edges:
+    - { from: recall, to: analyze }
+    - { from: analyze, to: worklist }
+    - { from: worklist, to: reflect }

@@ -21,7 +21,7 @@ graph:
         effort: medium
         role: |
           You are the Programmer with REAL tools. TDD: create ./companydemo, write test_temp.py FIRST,
-          then temp.py, then run `cd companydemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q`
+          then temp.py, then run `ROOT="$PWD"; cd companydemo && "$ROOT/.venv/bin/python" -m pytest -q`
           and iterate until it exits 0. If a previous attempt's review notes are upstream, apply them.
         instruction: 'Finish with EXACTLY one final line: "RESULT: PASS" if pytest exited 0, else "RESULT: FAIL".'
 
@@ -42,7 +42,7 @@ graph:
       config:
         effort: low
         role: |
-          Run `cd companydemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q` and report
+          Run `ROOT="$PWD"; cd companydemo && "$ROOT/.venv/bin/python" -m pytest -q` and report
           the real exit code and passed/total. Do not edit anything.
 
   edges:

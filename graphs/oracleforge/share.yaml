@@ -1,0 +1,69 @@
+# oracleforge → graph: STAGE 5 — CREATION & SHARING (PIPELINE.md §264-277).
+# A versioned URL codec + level editor + migration registry, so user-created levels round-trip and old
+# links never break. Real gate: codec roundtrip/fuzz tests, reducer tests, and migration fixtures green.
+#
+# Input (args.input): the engine + level schema (Stage 1/3 output), or a path.
+# Artifacts land in ./share_build/ . oracleforge is read-only reference.
+graph:
+  id: share
+  description: Stage 5 — URL codec + editor + migrations, gated by roundtrip/fuzz/migration tests
+  nodes:
+    - id: recall
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Upstream = engine + level schema (Read if a path). Output it UNCHANGED, then a
+          "## Sharing lessons" section from (tolerate "no relevant memory"/"MEMORY UNAVAILABLE"):
+            .venv/bin/python tools/rag_search.py --notebook oforge-lessons --top-k 5 --query "url codec, schemaVersion, migration registry, strict decoder, content hash, additive-only schema, UGC"
+
+    - id: build_codec
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the CODEC ENGINEER with REAL tools, building into ./share_build/ (Python):
+            - codec.py: a VERSIONED URL codec (encode/decode a level), a STRICT decoder (reject malformed),
+              and a content-hash. Every persisted artifact carries schemaVersion; changes are ADDITIVE-ONLY;
+              the decoder accepts ALL prior versions OR routes them through a named, ordered, run-once MIGRATION
+              registry.
+            - editor reducers (pure functions) for level editing; import re-verifies via the Stage-1 solver.
+            - tests/ (pytest): codec ROUNDTRIP + FUZZ (random/garbled input never crashes the decoder),
+              reducer tests, and a frozen MIGRATION FIXTURE per schema version (old link still decodes+plays).
+          On a FIX pass the upstream has failing output — fix the cause.
+        instruction: |
+          Run: ROOT="$PWD"; cd share_build && "$ROOT/.venv/bin/python" -m pytest -q
+          End with EXACTLY "CODEC: PASS" (pytest exit 0) or "CODEC: FAIL" + the failing tests.
+
+    - id: gate
+      type: loop_counter
+      config:
+        max_iterations: 3
+
+    - id: verify
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You have Bash. Independently verify (from the harness root): ROOT="$PWD"; cd share_build &&
+          "$ROOT/.venv/bin/python" -m pytest -q . Confirm roundtrip, fuzz, and every
+          migration fixture pass. End with EXACTLY "VERIFIED: PASS" or "VERIFIED: FAIL".
+
+    - id: reflect
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Distill ONE generalizable SHARING lesson (versioned codecs, additive-only schema,
+          fuzz-hardened decoders, migrations) and store it: (1) Bash: mkdir -p .runtmp && chmod 700 .runtmp ;
+          (2) Write it to .runtmp/share_lesson.txt ;
+          (3) Bash: .venv/bin/python tools/mem.py store --namespace lessons:share --text-file .runtmp/share_lesson.txt --meta source=share ;
+          (4) Bash: rm -f .runtmp/share_lesson.txt . Report the lesson.
+
+  edges:
+    - { from: recall, to: build_codec }
+    - { from: build_codec, to: verify, condition: "contains:CODEC: PASS" }
+    - { from: build_codec, to: gate, condition: "default" }
+    - { from: gate, to: build_codec }
+    - { from: verify, to: reflect, condition: "contains:VERIFIED: PASS" }
+    - { from: verify, to: gate, condition: "default" }

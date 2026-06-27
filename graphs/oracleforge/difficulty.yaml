@@ -1,0 +1,87 @@
+# oracleforge → graph: STAGE 2 — DIFFICULTY CONTRACT (PIPELINE.md §159-183).
+# Translate the designer's plain-English difficulty beliefs into COMPUTABLE gates over (level, solution,
+# frames), implemented as code with fixtures. The real gate: contract tests must FAIL on soft fixtures
+# (a too-easy/greedy/ambiguous level is rejected) and PASS on the hand-authored starter band.
+#
+# Input (args.input): the working oracle (foundation output) + the designer's difficulty beliefs (or a
+# path). Artifacts land in ./difficulty_build/ . oracleforge is read-only reference.
+graph:
+  id: difficulty
+  description: Stage 2 — computable difficulty contract, gated by soft-fail / starter-pass fixtures
+  nodes:
+    - id: recall
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Upstream = the oracle + difficulty beliefs (Read it if a path). Output it UNCHANGED,
+          then "## Difficulty lessons" from BOTH (tolerate "no relevant memory"/"MEMORY UNAVAILABLE"):
+            .venv/bin/python tools/rag_search.py --notebook oforge-lessons --top-k 6 --query "difficulty contract, anti-greedy, uniqueness gate, technique tier ladder, near-miss decoys, computable difficulty"
+            .venv/bin/python tools/mem.py search --namespace lessons:difficulty --top-k 4 --query "difficulty contract pitfalls"
+
+    - id: author_gates
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the DIFFICULTY DESIGNER. From the designer's plain-English beliefs (upstream), enumerate 6-10
+          COMPUTABLE gates over (level, solution, frames), each as: a designer-language sentence -> a formal
+          check. Cover, per PIPELINE.md §2: default-outcome rules, structural minimums, ANTI-GREEDY (the
+          obvious line must NOT win), UNIQUENESS (one optimal solution), a TECHNIQUE-TIER ladder (tier = the
+          highest deduction technique a level requires), per-chapter SEQUENCE constraints (non-decreasing,
+          rest beats after a spike), and FAILURE LEGIBILITY (near-miss band, capped decoys). Output the gate
+          table; this becomes the contract spec for the next node.
+
+    - id: build_contract
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the CONTRACT ENGINEER with REAL tools. Implement the gate table (upstream) into
+          ./difficulty_build/ (Python), reusing the foundation solver where available:
+            - contract.py: each gate as a pure predicate over (level, solution, frames).
+            - fixtures/: a STARTER band (hand-authored levels that SHOULD pass all gates) and SOFT fixtures
+              (deliberately too-easy / greedy-winnable / multi-solution / illegible levels that SHOULD be
+              REJECTED by at least one gate).
+            - tests/ (pytest): assert the starter band PASSES every gate and each SOFT fixture FAILS the gate
+              it targets (a contract that passes everything is not a contract).
+          On a FIX pass the upstream has failing output — fix the cause.
+        instruction: |
+          Run: ROOT="$PWD"; cd difficulty_build && "$ROOT/.venv/bin/python" -m pytest -q
+          End with EXACTLY "CONTRACT: PASS" (pytest exit 0: starter passes AND soft fixtures are rejected) or
+          "CONTRACT: FAIL" + the failing assertions.
+
+    - id: gate
+      type: loop_counter
+      config:
+        max_iterations: 3
+
+    - id: verify
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You have Bash. Independently verify: run
+            ROOT="$PWD"; cd difficulty_build && "$ROOT/.venv/bin/python" -m pytest -q
+          Confirm BOTH that the starter band passes and the soft fixtures are rejected. End with EXACTLY
+          "VERIFIED: PASS" or "VERIFIED: FAIL".
+
+    - id: reflect
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Distill ONE generalizable DIFFICULTY lesson (about computable gates / anti-greedy /
+          uniqueness / soft-fixture design) and store it: (1) Bash: mkdir -p .runtmp && chmod 700 .runtmp ;
+          (2) Write it to .runtmp/difficulty_lesson.txt ;
+          (3) Bash: .venv/bin/python tools/mem.py store --namespace lessons:difficulty --text-file .runtmp/difficulty_lesson.txt --meta source=difficulty ;
+          (4) Bash: rm -f .runtmp/difficulty_lesson.txt . Report the lesson.
+
+  edges:
+    - { from: recall, to: author_gates }
+    - { from: author_gates, to: build_contract }
+    - { from: build_contract, to: verify, condition: "contains:CONTRACT: PASS" }
+    - { from: build_contract, to: gate, condition: "default" }
+    - { from: gate, to: build_contract }
+    - { from: verify, to: reflect, condition: "contains:VERIFIED: PASS" }
+    - { from: verify, to: gate, condition: "default" }

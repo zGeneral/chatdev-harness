@@ -1,0 +1,93 @@
+# oracleforge → graph: STAGE 3 — CONTENT ENGINE (PIPELINE.md §184-222).
+# Mission before space: a curriculum graph of insights, then REAL solver-gated generate-and-test — a
+# candidate level is accepted iff the solver proves it solvable AND it teaches its assigned insight
+# (a revelation certificate). The loop continues until every insight is covered; a rejection census
+# records why candidates were killed (the generator's honesty check).
+#
+# Input (args.input): the difficulty contract + working solver (Stage 1-2 output), or a path.
+# Artifacts land in ./content_build/ . oracleforge is read-only reference.
+graph:
+  id: content
+  description: Stage 3 — curriculum + solver-gated generate-and-test until the curriculum is covered
+  nodes:
+    - id: recall
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Upstream = the contract + solver (Read it if a path). Output it UNCHANGED, then a
+          "## Content lessons" section from BOTH (tolerate "no relevant memory"/"MEMORY UNAVAILABLE"):
+            .venv/bin/python tools/rag_search.py --notebook oforge-lessons --top-k 6 --query "generate and test, curriculum graph, revelation certificate, expressive range, rejection census, generator starvation"
+            .venv/bin/python tools/mem.py search --namespace lessons:content --top-k 4 --query "content engine pitfalls"
+
+    - id: curriculum
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the CURRICULUM DESIGNER. Build a CURRICULUM GRAPH: each INSIGHT (a discrete deduction the
+          player must learn) is a node; dependency edges give the teaching order. Output the insight list with
+          dependencies and, per insight, the acceptance criterion a generated level must satisfy to TEACH it
+          (i.e. the solver must show that insight is NECESSARY to win). This drives generate-and-test.
+
+    - id: generate
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the GENERATE-AND-TEST ENGINEER with REAL tools, building into ./content_build/ (Python),
+          reusing the Stage-1 solver. For each not-yet-covered insight: generate candidate levels and ACCEPT
+          one iff the solver proves it (a) solvable, (b) UNIQUE-optimal per the contract, and (c) teaches the
+          assigned insight (the insight is necessary — a revelation certificate). Maintain pack.json (accepted
+          levels keyed by insight) and rejections.json (a REJECTION CENSUS: per-gate kill counts). On a later
+          pass the upstream lists still-uncovered insights — target those.
+        instruction: |
+          Run your generator+solver, then print coverage. End with EXACTLY "COVERED: ALL" if every curriculum
+          insight has >=1 accepted level, else "COVERED: PARTIAL" followed by the list of uncovered insights
+          (and note any insight where the generator starves — high reject rate — which is a design signal).
+
+    - id: gate
+      type: loop_counter
+      config:
+        max_iterations: 4
+
+    - id: census
+      type: agent
+      config:
+        effort: medium
+        role: |
+          First use Read on graphs/oracleforge/vendor/agents/generator-analyst.md if present. You have
+          Bash. Run an EXPRESSIVE-RANGE census over ./content_build/ : sweep generator parameters, report
+          hit-rate vs expressive range, and summarize the rejection census (which gate kills most). Flag any
+          insight whose only levels are near-duplicates (low range). Report the table.
+
+    - id: curator_review
+      type: agent
+      agentType: feature-dev:code-reviewer
+      config:
+        effort: medium
+        role: |
+          Acting as the LEVEL CURATOR (see graphs/oracleforge/vendor/agents/level-curator.md), inspect
+          ./content_build/pack.json: confirm every curriculum insight is covered, flag filler/duplicate levels,
+          and confirm each accepted level's revelation certificate is real. End with "CURATION: CLEAN" or
+          "CURATION: ISSUES" + the list.
+
+    - id: reflect
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Distill ONE generalizable CONTENT lesson (about generate-and-test / curriculum /
+          revelation certificates / generator starvation) and store it: (1) Bash: mkdir -p .runtmp && chmod 700 .runtmp ;
+          (2) Write it to .runtmp/content_lesson.txt ;
+          (3) Bash: .venv/bin/python tools/mem.py store --namespace lessons:content --text-file .runtmp/content_lesson.txt --meta source=content ;
+          (4) Bash: rm -f .runtmp/content_lesson.txt . Report the lesson.
+
+  edges:
+    - { from: recall, to: curriculum }
+    - { from: curriculum, to: generate }
+    - { from: generate, to: census, condition: "contains:COVERED: ALL" }
+    - { from: generate, to: gate, condition: "default" }
+    - { from: gate, to: generate }
+    - { from: census, to: curator_review }
+    - { from: curator_review, to: reflect }

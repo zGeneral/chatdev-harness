@@ -1,0 +1,86 @@
+# oracleforge → graph: STAGE 1 — DETERMINISTIC FOUNDATION (PIPELINE.md §136-158).
+# Build the pure engine + exact solver via TDD, with golden traces + solver↔engine equivalence as
+# REAL gates (node --test / pytest must be green). This is our software-factory pattern aimed at the
+# oracle: the foundation is accepted only when the tests actually pass — not when self-certified.
+#
+# Input (args.input): the frozen Stage-0 spec / oracle sketch (the output of ideate.yaml's synthesize),
+# or a path to it. Build artifacts land in ./foundation_build/ . oracleforge is read-only reference.
+graph:
+  id: foundation
+  description: Stage 1 — deterministic engine + exact solver, gated by real golden-trace/equivalence tests
+  nodes:
+    - id: recall
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. The upstream message is the frozen game spec/oracle sketch (or a path — Read it if so).
+          Output the spec UNCHANGED, then a "## Foundation lessons" section from BOTH (return their stdout;
+          tolerate "no relevant memory"/"MEMORY UNAVAILABLE"):
+            .venv/bin/python tools/rag_search.py --notebook oforge-lessons --top-k 6 --query "deterministic engine, exact solver, golden trace, solver-engine equivalence, purity, twin-run"
+            .venv/bin/python tools/mem.py search --namespace lessons:foundation --top-k 4 --query "deterministic engine and exact solver pitfalls"
+
+    - id: build
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the FOUNDATION ENGINEER with REAL tools. Build, via TDD, into ./foundation_build/ (Python):
+            - logic.py: a PURE deterministic engine — simulate(level, moves) (full frame stream) and
+              evaluate(level, moves) -> {outcome, visited} (fast path), with a documented fixed tick order and
+              NO wall-clock / NO RNG. Pattern: graphs/oracleforge/vendor/templates/engine/simulation.js.
+            - solver.py: an exact solver (lazy IDDFS, branch only on visited cells, memoized) exposing
+              solveWithStats(level) -> {solution, par, nodes} and countSolutions(cap) for uniqueness.
+              Pattern: graphs/oracleforge/vendor/templates/solver/solver.js.
+            - tests/ (pytest) pinning, per PIPELINE.md §1: the GOLDEN TRACE; a completeness test; a twin-run
+              determinism test (same input -> identical frames); a purity test (stepTick has no side effects);
+              and a SOLVER↔ENGINE EQUIVALENCE test (the solver's solution actually wins under the engine).
+          On a later FIX pass the upstream will contain failing-test output — read it and fix the cause.
+        instruction: |
+          Run: ROOT="$PWD"; cd foundation_build && "$ROOT/.venv/bin/python" -m pytest -q
+          Report the result and end with EXACTLY one final line: "FOUNDATION: PASS" if pytest exits 0, else
+          "FOUNDATION: FAIL" followed by the failing test names and the salient assertion output.
+
+    - id: review
+      type: agent
+      agentType: feature-dev:code-reviewer
+      config:
+        effort: medium
+        role: |
+          Review ./foundation_build/ for the determinism contract: any hidden RNG, wall-clock, mutable global
+          state, or solver/engine divergence (the solver must use the SAME evaluate() the engine uses). Report
+          concrete issues with file:line. End with "REVIEW: CLEAN" or "REVIEW: ISSUES" + the list.
+
+    - id: gate
+      type: loop_counter
+      config:
+        max_iterations: 3
+
+    - id: verify
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You have Bash. Independently verify the foundation: run
+            ROOT="$PWD"; cd foundation_build && "$ROOT/.venv/bin/python" -m pytest -q
+          Report the authoritative pass/fail. End with EXACTLY "VERIFIED: PASS" (pytest exit 0) or "VERIFIED: FAIL".
+
+    - id: reflect
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Distill ONE generalizable FOUNDATION lesson (about determinism/solver-equivalence/
+          golden-traces — not this specific game) and store it: (1) Bash: mkdir -p .runtmp && chmod 700 .runtmp ;
+          (2) Write it to .runtmp/foundation_lesson.txt ;
+          (3) Bash: .venv/bin/python tools/mem.py store --namespace lessons:foundation --text-file .runtmp/foundation_lesson.txt --meta source=foundation ;
+          (4) Bash: rm -f .runtmp/foundation_lesson.txt . Report the lesson.
+
+  edges:
+    - { from: recall, to: build }
+    - { from: build, to: review, condition: "contains:FOUNDATION: PASS" }
+    - { from: build, to: gate, condition: "default" }
+    - { from: gate, to: build }
+    - { from: review, to: verify }
+    - { from: verify, to: reflect, condition: "contains:VERIFIED: PASS" }
+    - { from: verify, to: gate, condition: "default" }

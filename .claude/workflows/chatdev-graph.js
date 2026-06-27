@@ -21,7 +21,7 @@ A = (A && typeof A === 'object') ? A : {}
 let G = A.graph
 if (typeof G === 'string') { try { G = JSON.parse(G) } catch (e) { G = null } }
 const initialInput = A.input || ''
-const PYBIN = A.pybin || '/Users/hassiba/git/chatdev_harness/.venv/bin/python'
+const PYBIN = A.pybin || '.venv/bin/python'
 const MAX_STEPS = A.maxSteps || 64
 const EFFORT = A.effort || 'medium'
 
@@ -51,6 +51,13 @@ async function runGraph(graph, input, executeNodeFn, logFn) {
   const entry = (graph.nodes || []).filter(n => !hasIncoming.has(n.id)).map(n => n.id)
   const outputs = {}
   const loopCounts = {}
+  // Opt-in fan-in: a node with `join:true` waits until ALL its incoming edges have fired, then runs
+  // ONCE with the inputs concatenated (used for councils/panels — independent critics -> one synthesizer).
+  // Constraint: join expects UNCONDITIONAL incoming edges (acyclic fan-in); nodes without `join` are unaffected.
+  const inEdgeCount = {}
+  for (const e of edges) inEdgeCount[e.to] = (inEdgeCount[e.to] || 0) + 1
+  const joinBuf = {}
+  const joinCount = {}
   const trace = []
   const queue = entry.length ? entry.map(id => ({ id, message: input })) : []
   if (!entry.length && graph.nodes && graph.nodes.length) queue.push({ id: graph.nodes[0].id, message: input })
@@ -82,7 +89,20 @@ async function runGraph(graph, input, executeNodeFn, logFn) {
     let toFire = matched
     if (!matched.length) { const def = outgoing.find(e => e.condition === 'default'); if (def) toFire = [def] }
     for (const e of toFire) {
-      queue.push({ id: e.to, message: e.carry_data ? out : '' })
+      const target = nodes[e.to]
+      const msg = e.carry_data ? out : ''
+      const isJoin = target && (target.join === true || (target.config && target.config.join === true))
+      if (isJoin) {
+        joinBuf[e.to] = joinBuf[e.to] || []
+        joinBuf[e.to].push(msg)
+        joinCount[e.to] = (joinCount[e.to] || 0) + 1
+        if (joinCount[e.to] >= (inEdgeCount[e.to] || 1)) {
+          queue.push({ id: e.to, message: joinBuf[e.to].join('\n\n----- (next input) -----\n\n') })
+          joinBuf[e.to] = []; joinCount[e.to] = 0 // reset for any re-entry
+        }
+      } else {
+        queue.push({ id: e.to, message: msg })
+      }
     }
   }
   if (steps >= MAX_STEPS) log('engine hit MAX_STEPS=' + MAX_STEPS + ' (loop guard)')
@@ -131,11 +151,11 @@ async function executeNode(node, message) {
     const topK = parseInt(cfg.top_k, 10) || 5
     const qtext = String(cfg.query != null ? cfg.query : (message || ''))
     const ttext = String(cfg.text != null ? cfg.text : (message || ''))
-    const PY = '/Users/hassiba/git/chatdev_harness/.venv/bin/python'
-    const TOOLS = '/Users/hassiba/git/chatdev_harness/tools'
+    const PY = '.venv/bin/python'
+    const TOOLS = 'tools'
     // Temp text goes in a user-owned, chmod-700, repo-local dir (NOT world-writable /tmp) and is
     // deleted after use — so other local users can't pre-plant a symlink at the path or read the text.
-    const TMPDIR = '/Users/hassiba/git/chatdev_harness/.runtmp'
+    const TMPDIR = '.runtmp'
     const nid = ident(node.id)
     const f = (suffix) => TMPDIR + '/mem_' + nid + '_' + suffix + '.txt'
     const runWithFile = (file, data, cmd) => agent(
@@ -184,7 +204,7 @@ if (!A.noRunLog) {
     // the command is fully fixed here, with no placeholder for the agent to fill from untrusted text.
     const green = /\bgreen\b|\bpass(ed)?\b|exit 0|smoke exit 0|\b(\d+)\/\1\b/i.test(String(result.final || ''))
     const safe = (s) => String(s || '').replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 60) // strips all shell metachars
-    const cmd = '/Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/run_log.py' +
+    const cmd = '.venv/bin/python tools/run_log.py' +
       ' --graph "' + safe(G.id || 'graph') + '" --green ' + green + ' --steps ' + (parseInt(result.steps, 10) || 0) +
       ' --final "ended:' + safe(result.finalNode) + '"'
     await agent(

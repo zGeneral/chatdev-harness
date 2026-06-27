@@ -19,7 +19,7 @@ company charter (roles, phase order, handoffs, stop signals).
 pytest for the demo target. Runs on the Claude subscription (no API key).
 
 ## Global Constraints
-- All writes inside `/Users/hassiba/git/chatdev_harness`; **never** touch `/Users/hassiba/git/chatdev`.
+- All writes inside this repo; **never** touch the original ChatDev reference repo.
 - Demo app lives in `./demo`, separate from harness config.
 - Reviewer agent is **genuinely read-only** (frontmatter `tools: Read, Glob, Grep` — no Write/Edit/Bash). HARD requirement.
 - No `ANTHROPIC_API_KEY`; interactive-first; subscription auth.

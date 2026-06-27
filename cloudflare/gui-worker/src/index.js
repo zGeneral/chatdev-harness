@@ -66,16 +66,21 @@ export default {
         return relay(await svc(env.RAG, env.RAG_API_TOKEN, '/api/documents?notebook=' + nb + '&limit=200', 'GET'));
       }
 
-      // ---- graphs (public GitHub repo) ----
+      // ---- graphs (public GitHub repo; top-level + graphs/oracleforge/ subdir) ----
       if (p === '/api/graphs/list') {
-        const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/graphs?ref=${GH.branch}`,
-          { headers: { 'User-Agent': UA, Accept: 'application/vnd.github+json' } });
-        const arr = await r.json();
-        const files = Array.isArray(arr) ? arr.filter((f) => f.name.endsWith('.yaml')).map((f) => f.name) : [];
-        return json({ files });
+        const dirYaml = async (sub) => {
+          const r = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/graphs${sub}?ref=${GH.branch}`,
+            { headers: { 'User-Agent': UA, Accept: 'application/vnd.github+json' } });
+          const arr = await r.json();
+          return Array.isArray(arr) ? arr.filter((f) => f.type === 'file' && f.name.endsWith('.yaml')).map((f) => (sub ? sub.slice(1) + '/' : '') + f.name) : [];
+        };
+        const [top, of] = await Promise.all([dirYaml(''), dirYaml('/oracleforge')]);
+        return json({ files: [...top, ...of] });
       }
       if (p === '/api/graphs/get') {
-        const name = String(body.name || '').replace(/[^a-zA-Z0-9_.-]/g, '');
+        // allow a subdir path (e.g. oracleforge/ideate.yaml); reject traversal.
+        const name = String(body.name || '').replace(/[^a-zA-Z0-9_./-]/g, '');
+        if (name.includes('..')) return json({ error: 'bad name' }, 400);
         const r = await fetch(`https://raw.githubusercontent.com/${GH.owner}/${GH.repo}/${GH.branch}/graphs/${name}`,
           { headers: { 'User-Agent': UA } });
         if (!r.ok) return json({ error: 'graph not found' }, 404);

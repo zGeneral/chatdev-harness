@@ -15,7 +15,7 @@ graph:
         effort: low
         role: |
           You have Bash. List every current lesson by running:
-            /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py list --namespace lessons:gamedev --limit 300
+            .venv/bin/python tools/mem.py list --namespace lessons:gamedev --limit 300
           Return its stdout VERBATIM (a JSON object with count + items[].text). If it prints
           "MEMORY UNAVAILABLE", return exactly that.
 
@@ -41,9 +41,9 @@ graph:
           If it is "NOTHING TO CONSOLIDATE": do nothing and report that.
           Otherwise REPLACE the namespace with the consolidated set:
             1) Delete the old entries:
-               /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py delete --namespace lessons:gamedev
+               .venv/bin/python tools/mem.py delete --namespace lessons:gamedev
             2) Store each consolidated lesson (one call per line, drop the leading "- "):
-               /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py store --namespace lessons:gamedev --text "<lesson>" --meta source=consolidation
+               .venv/bin/python tools/mem.py store --namespace lessons:gamedev --text "<lesson>" --meta source=consolidation
           Report how many you deleted and how many you stored.
 
   edges:

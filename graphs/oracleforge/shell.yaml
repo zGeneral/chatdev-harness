@@ -1,0 +1,92 @@
+# oracleforge → graph: STAGE 4 — SHELL & RETENTION (PIPELINE.md §223-263). [Alpha gate]
+# Build the game shell (flat-screen router, selection screen, Daily/Endless/Gauntlet, hint ladder
+# orient->eliminate->move->step-through), with an ethics/dark-pattern audit as a real gate. Auto-gated:
+# mode-determinism tests + the dark-pattern audit. HUMAN-IN-THE-LOOP: the ≤90s time-to-first-solve
+# first-look protocol (2-3 humans) is a person playing — the graph prepares it but cannot replace it.
+#
+# Input (args.input): the certified level pack (Stage 3 output) + game UI conventions, or a path.
+# Artifacts land in ./shell_build/ . oracleforge is read-only reference.
+graph:
+  id: shell
+  description: Stage 4 — shell, modes, hint ladder; gated by mode-determinism tests + dark-pattern audit
+  nodes:
+    - id: recall
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Upstream = certified pack + UI conventions (Read if a path). Output it UNCHANGED, then
+          a "## Shell lessons" section from BOTH (tolerate "no relevant memory"/"MEMORY UNAVAILABLE"):
+            .venv/bin/python tools/rag_search.py --notebook oforge-lessons --top-k 5 --query "shell, hint ladder, daily seed, dark patterns, grace streak, instant retry, game feel"
+            .venv/bin/python tools/rag_search.py --notebook game-design --top-k 4 --query "onboarding, retention, hints, accessibility, juice and feedback"
+
+    - id: spec_shell
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the SHELL ARCHITECT. Specify the shell per PIPELINE.md §4: a flat-screen ROUTER; a selection
+          screen (stars hero, perfect marks); DAILY (UTC date -> seed -> same level worldwide, no backend),
+          ENDLESS, GAUNTLET; a HINT LADDER (orient -> eliminate -> move -> step-through, with an eureka-integrity
+          rule); instant retry (<2s); a meta-economy with no runaway loops; and a game-feel/affordance pass
+          (moving-part glyphs, audio with persisted mute). Output the module list + the exit-gate TEST names.
+
+    - id: build
+      type: agent
+      config:
+        effort: high
+        role: |
+          You are the SHELL ENGINEER with REAL tools, building the shell + modes (upstream spec) into
+          ./shell_build/ with automated tests: MODE-DETERMINISM tests (Daily seed -> identical level; replay
+          determinism), a GRACE-STREAK test (a missed day inside grace does not reset; 'best' still shown), and
+          the hint-ladder eureka-integrity test. On a FIX pass the upstream has failing output — fix the cause.
+        instruction: |
+          Run the shell test suite (e.g. cd shell_build && <test runner>). End with EXACTLY "SHELL: PASS" if
+          the suite is green, else "SHELL: FAIL" + the failing tests.
+
+    - id: gate
+      type: loop_counter
+      config:
+        max_iterations: 3
+
+    - id: ethics_audit
+      type: agent
+      config:
+        effort: medium
+        role: |
+          First use Read on graphs/oracleforge/vendor/agents/ethics-auditor.md. Then audit ./shell_build/
+          for DARK PATTERNS across the shell surfaces (the four categories), map to self-determination-theory,
+          and check the regret-probe is present. Produce the dark-pattern audit table. End with EXACTLY
+          "ETHICS: CLEAN" (zero unmitigated dark patterns) or "ETHICS: ISSUES" + the table.
+
+    - id: verify
+      type: agent
+      config:
+        effort: medium
+        role: |
+          You have Bash. Re-run the shell test suite in ./shell_build/ and confirm green. Then output the
+          FIRST-LOOK PROTOCOL checklist for the human step (2-3 fresh players at tier boundaries; stuck-points
+          veto comprehension fails; ≤90s time-to-first-solve target) — this is HUMAN-IN-THE-LOOP, not automated.
+          End with EXACTLY "VERIFIED: PASS" (suite green; checklist prepared) or "VERIFIED: FAIL".
+
+    - id: reflect
+      type: agent
+      config:
+        effort: low
+        role: |
+          You have Bash. Distill ONE generalizable SHELL/retention lesson (dark-pattern avoidance, hint
+          integrity, daily determinism) and store it: (1) Bash: mkdir -p .runtmp && chmod 700 .runtmp ;
+          (2) Write it to .runtmp/shell_lesson.txt ;
+          (3) Bash: .venv/bin/python tools/mem.py store --namespace lessons:shell --text-file .runtmp/shell_lesson.txt --meta source=shell ;
+          (4) Bash: rm -f .runtmp/shell_lesson.txt . Report the lesson.
+
+  edges:
+    - { from: recall, to: spec_shell }
+    - { from: spec_shell, to: build }
+    - { from: build, to: ethics_audit, condition: "contains:SHELL: PASS" }
+    - { from: build, to: gate, condition: "default" }
+    - { from: gate, to: build }
+    - { from: ethics_audit, to: verify, condition: "contains:ETHICS: CLEAN" }
+    - { from: ethics_audit, to: gate, condition: "default" }
+    - { from: verify, to: reflect, condition: "contains:VERIFIED: PASS" }
+    - { from: verify, to: gate, condition: "default" }

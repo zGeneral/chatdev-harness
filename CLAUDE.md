@@ -159,6 +159,6 @@ view a run dashboard. Auth-gated by `GUI_TOKEN`; reaches `chatdev-memory` + `per
 engine calls it best-effort at the end of every graph). Deploy/secrets: `cloudflare/gui-worker/README.md`.
 
 ## Working in this repo (isolation rules)
-- All writes stay inside this repo. **Never modify `/Users/hassiba/git/chatdev`** (read-only reference).
+- All writes stay inside this repo. **Never modify the original ChatDev reference repo** (read-only reference).
 - The built app goes in `./demo`, kept separate from harness config (`.claude/`, `CLAUDE.md`).
 - This harness is interactive-first and runs on the Claude subscription — **no `ANTHROPIC_API_KEY`**.

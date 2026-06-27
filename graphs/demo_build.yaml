@@ -23,7 +23,7 @@ graph:
         role: |
           You are the Programmer with REAL tools (Write/Edit/Bash). Implement the spec from upstream
           using TDD: create ./graphdemo, write test_strutil.py FIRST, then strutil.py, then run
-          `cd graphdemo && /Users/hassiba/git/chatdev_harness/.venv/bin/python -m pytest -q`
+          `ROOT="$PWD"; cd graphdemo && "$ROOT/.venv/bin/python" -m pytest -q`
           and iterate until it exits 0.
         instruction: |
           Finish your reply with EXACTLY one final line: "RESULT: PASS" if pytest exited 0,
