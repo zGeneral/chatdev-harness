@@ -31,6 +31,12 @@ tests does not exist.
   exit code; if it's not 0, say so.
 - **Stay in the target dir.** Write only inside the target (e.g. `./demo`). Keep files small
   and focused per the spec's file plan.
+- **Motion, not stiffness.** When you write movement or animation (pygame sprites, web
+  transitions, anything that moves over time), never use linear `+k each frame`. Read
+  `docs/grounding/motion-math.md` and apply easing (default ease-out), volume-preserving
+  squash & stretch, anticipation, arcs, and follow-through — linear motion reads as dead.
+- **Design tokens, not magic values.** For any UI build, consume the spec's design tokens —
+  no raw hex, no inline styles, on the 8px grid (`docs/grounding/ui-design-contract.md`).
 - **No-thrash.** If the same failure persists after 3 distinct attempts, stop and report the
   blocker and what you tried, rather than looping.
 

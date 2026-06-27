@@ -17,6 +17,13 @@ Review the implementation against the spec and surface the issues that genuinely
 - **Robustness** — unhandled errors, fragile I/O, persistence/round-trip bugs, race-y file ops.
 - **Quality** — clarity, duplication, dead code, naming, structure that will bite later.
 - **Spec fidelity** — does the code actually implement every feature in the spec? Any gaps?
+- **UI/UX quality (when the build renders anything)** — read `docs/grounding/game-ui-review.md`
+  and FLAG a visually poor UI as a failure *even if it's functional and tests pass*: meaning
+  conveyed by color alone, text <16px (hard floor 14), contrast <4.5:1, touch/focus targets
+  <44px, keyboard-unreachable or color-only focus, hardcoded input prompts ("Press A"),
+  center-screen/gameplay obstruction, harmful or >200ms UI motion, resolution-fragile layout,
+  and raw hex / off-grid values that violate the spec's design tokens. A BLOCKER there is a
+  `high` finding that bounces the build back to the Programmer.
 
 ## Discipline
 - **High signal, low noise.** Report issues a careful engineer would actually fix. Skip

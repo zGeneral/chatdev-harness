@@ -28,6 +28,16 @@ Read the product prompt (and any existing code in the target dir, read-only) and
    fast, deterministic, isolated tests (e.g. pytest `tmp_path`). Include at least one test
    per feature plus a persistence/round-trip test.
 
+## When the product has a UI (web app, dashboard, game HUD — any rendered interface)
+Add a **Design System** section to the spec defining tokens BEFORE any component, so the Programmer builds
+to a system instead of inventing hex/inline styles and the Reviewer can enforce it. Read
+`docs/grounding/ui-design-contract.md` and require, with concrete values: HSL semantic color tokens
+(+ light/dark), a type scale (body ≥16px, ≤3 weights), an 8px spacing scale, one radius + one elevation
+scale, motion tokens, named responsive breakpoints (touch targets ≥44px), and accessibility acceptance
+criteria (WCAG AA ≥4.5:1 contrast, keyboard reach + visible focus, ARIA, alt text). Emit the tokens as a
+table / CSS-vars block, and list "no raw hex · no inline styles · on the 8px grid · AA contrast · visible
+focus" as named, reviewer-enforced acceptance gates in the test plan.
+
 ## Discipline
 - **Decisive & complete.** No "TBD", no "the programmer will decide". If a detail is
   unspecified by the customer, choose a sensible default and state it.
