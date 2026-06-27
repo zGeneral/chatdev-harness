@@ -1,5 +1,0 @@
-Model: gemini-2.5-flash-image
-Generated: 2026-06-26T23:48:30
-
-Prompt:
-A neon-on-slate hero key-art game cover for "Rockfall: Last Drift": a small glowing cyan vector spaceship (#36E2C8) banking hard near the bottom of a tall portrait frame, weaving through a dense cascade of angular grey asteroids (#8A93A6) tumbling down from a deep slate void (#0E1320). Clean flat-vector style with crisp geometric shapes, subtle neon glow on the ship, and dramatic vertical composition that funnels the falling rocks toward the player; tense, high-stakes arcade mood, polished and game-cover-worthy.

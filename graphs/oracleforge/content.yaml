@@ -5,7 +5,7 @@
 # records why candidates were killed (the generator's honesty check).
 #
 # Input (args.input): the difficulty contract + working solver (Stage 1-2 output), or a path.
-# Artifacts land in ./content_build/ . oracleforge is read-only reference.
+# Artifacts land in ./out/content/ . oracleforge is read-only reference.
 graph:
   id: content
   description: Stage 3 — curriculum + solver-gated generate-and-test until the curriculum is covered
@@ -35,7 +35,7 @@ graph:
       config:
         effort: high
         role: |
-          You are the GENERATE-AND-TEST ENGINEER with REAL tools, building into ./content_build/ (Python),
+          You are the GENERATE-AND-TEST ENGINEER with REAL tools, building into ./out/content/ (Python),
           reusing the Stage-1 solver. For each not-yet-covered insight: generate candidate levels and ACCEPT
           one iff the solver proves it (a) solvable, (b) UNIQUE-optimal per the contract, and (c) teaches the
           assigned insight (the insight is necessary — a revelation certificate). Maintain pack.json (accepted
@@ -57,7 +57,7 @@ graph:
         effort: medium
         role: |
           First use Read on graphs/oracleforge/vendor/agents/generator-analyst.md if present. You have
-          Bash. Run an EXPRESSIVE-RANGE census over ./content_build/ : sweep generator parameters, report
+          Bash. Run an EXPRESSIVE-RANGE census over ./out/content/ : sweep generator parameters, report
           hit-rate vs expressive range, and summarize the rejection census (which gate kills most). Flag any
           insight whose only levels are near-duplicates (low range). Report the table.
 
@@ -68,7 +68,7 @@ graph:
         effort: medium
         role: |
           Acting as the LEVEL CURATOR (see graphs/oracleforge/vendor/agents/level-curator.md), inspect
-          ./content_build/pack.json: confirm every curriculum insight is covered, flag filler/duplicate levels,
+          ./out/content/pack.json: confirm every curriculum insight is covered, flag filler/duplicate levels,
           and confirm each accepted level's revelation certificate is real. End with "CURATION: CLEAN" or
           "CURATION: ISSUES" + the list.
 

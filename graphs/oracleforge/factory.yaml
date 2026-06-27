@@ -1,12 +1,12 @@
 # oracleforge GAME FACTORY — autonomous idea → production, end-to-end, in ONE engine run.
 # Input (args.input): a game idea (free text) OR a path to an IDEA spec.
-# Output: a shippable web game in ./game_out/ that passed EVERY stage gate (real tests run + are
+# Output: a shippable web game in ./out/factory/ that passed EVERY stage gate (real tests run + are
 # re-checked by an INDEPENDENT verifier — a stage cannot self-certify a fake green).
 #
 # Design (hardened by an adversarial review):
-#  - ONE coherent JS/web game in ./game_out/ (oracleforge's real target; its templates are JS). Canonical
-#    layout pinned in game_out/SPEC.md by `synthesize` so every stage reads/writes the SAME paths.
-#    Everything is ESM (game_out/package.json {"type":"module"}); the gate is `cd game_out && node --test`.
+#  - ONE coherent JS/web game in ./out/factory/ (oracleforge's real target; its templates are JS). Canonical
+#    layout pinned in out/factory/SPEC.md by `synthesize` so every stage reads/writes the SAME paths.
+#    Everything is ESM (out/factory/package.json {"type":"module"}); the gate is `cd out/factory && node --test`.
 #  - Each stage = build -> INDEPENDENT verify (re-runs node --test; emits the gate marker from the REAL
 #    exit code; never edits) -> bounded retry. Markers are anchored to their own line (regex), so a stage
 #    that merely MENTIONS a marker in prose can't mis-route (a real bug this review caught).
@@ -15,7 +15,7 @@
 #  - ship smoke = IN-PROCESS handler tests (no long-lived server to hang an unattended run).
 #  - Stage 7 (beta loop) needs real players — see graphs/oracleforge/rebalance.yaml.
 # Roles + templates are vendored under graphs/oracleforge/vendor/. Paths are relative to the repo root
-# (the agents' cwd); steps that cd capture ROOT=$PWD first. Artifacts: ./game_out/ (gitignored).
+# (the agents' cwd); steps that cd capture ROOT=$PWD first. Artifacts: ./out/factory/ (gitignored).
 #
 # Run:  /run-graph graphs/oracleforge/factory.yaml   with args.input = "<your game idea>"
 graph:
@@ -28,8 +28,8 @@ graph:
         effort: low
         role: |
           You bootstrap an autonomous game build. The input is a game IDEA (free text) or a path to an IDEA
-          spec (Read it if a path). Bash: mkdir -p game_out . Use the Write tool to save the idea to
-          game_out/IDEA.md. Output the idea text UNCHANGED (this seeds the oracle-fit council).
+          spec (Read it if a path). Bash: mkdir -p out/factory . Use the Write tool to save the idea to
+          out/factory/IDEA.md. Output the idea text UNCHANGED (this seeds the oracle-fit council).
 
     - id: recall
       type: agent
@@ -80,15 +80,15 @@ graph:
         role: |
           You are the SYNTHESIZER (see graphs/oracleforge/vendor/agents/synthesizer.md). Upstream holds THREE
           independent critic verdicts (each starts "VERDICT:"). If >=2 say "unfit" -> NO-GO. Otherwise adopt
-          the survivable redesigns and FREEZE the design. Use the Write tool to write game_out/SPEC.md with:
+          the survivable redesigns and FREEZE the design. Use the Write tool to write out/factory/SPEC.md with:
           front-matter; Frozen rules (axioms); Oracle sketch (state / move set / win predicate / pruning);
           Golden trace; Content dimensions; Difficulty seed; and an "IMPLEMENTATION CONTRACT" section that
           pins the canonical layout EVERY later stage must follow:
-            * Language: JavaScript ESM. game_out/package.json = {"type":"module"}.
-            * Engine+solver: game_out/engine.js (deterministic simulate/evaluate + exact BFS/IDDFS solver
-              solveWithStats + countSolutions); census: game_out/census.js.
-            * ALL tests are node --test files named game_out/*.test.js. The canonical gate is, from repo root:
-              ROOT="$PWD"; cd game_out && node --test  (exit 0 = green).
+            * Language: JavaScript ESM. out/factory/package.json = {"type":"module"}.
+            * Engine+solver: out/factory/engine.js (deterministic simulate/evaluate + exact BFS/IDDFS solver
+              solveWithStats + countSolutions); census: out/factory/census.js.
+            * ALL tests are node --test files named out/factory/*.test.js. The canonical gate is, from repo root:
+              ROOT="$PWD"; cd out/factory && node --test  (exit 0 = green).
             * Later stages ADD modules (contract.js, baker.js, pack.json, codec.js, shell: index.html/app.js/
               sw.js, worker.js) and ADD *.test.js — never rename engine.js or move tests.
           Output: a FIRST line EXACTLY "COUNCIL: GO" or "COUNCIL: NO-GO"; then a one-paragraph summary.
@@ -99,13 +99,13 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 0 ORACLE. REAL tools, cwd = repo root. Read game_out/SPEC.md and follow its IMPLEMENTATION
+          STAGE 0 ORACLE. REAL tools, cwd = repo root. Read out/factory/SPEC.md and follow its IMPLEMENTATION
           CONTRACT exactly. Patterns: graphs/oracleforge/vendor/templates/solver/solver.js and
-          .../engine/simulation.js. Write: game_out/package.json ({"type":"module"}); game_out/engine.js
+          .../engine/simulation.js. Write: out/factory/package.json ({"type":"module"}); out/factory/engine.js
           (deterministic engine honoring the SPEC golden trace + exact solver returning min length AND
-          solution count); game_out/census.js (SEEDED rng, >=300 small boards, prints solvable %, unique-
+          solution count); out/factory/census.js (SEEDED rng, >=300 small boards, prints solvable %, unique-
           optimal %, straight-aim regret %, node-budget overflow; prints "CENSUS: HEALTHY" iff non-degenerate);
-          game_out/engine.test.js (node --test: golden trace + a stall/edge case + a win-predicate case).
+          out/factory/engine.test.js (node --test: golden trace + a stall/edge case + a win-predicate case).
           On a FAIL retry the upstream has the failing output — fix the cause. End with "ORACLE: BUILT".
 
     - id: oracle_verify
@@ -114,8 +114,8 @@ graph:
         effort: medium
         role: |
           INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY (cwd = repo root):
-            ROOT="$PWD"; cd game_out && node --test 2>&1; echo "NODE_EXIT=$?"
-            ROOT="$PWD"; cd game_out && node census.js 2>&1 | tail -20
+            ROOT="$PWD"; cd out/factory && node --test 2>&1; echo "NODE_EXIT=$?"
+            ROOT="$PWD"; cd out/factory && node census.js 2>&1 | tail -20
           If NODE_EXIT=0 AND the census output contains "CENSUS: HEALTHY", end with EXACTLY a final line
           "ORACLE: PASS". Otherwise end with "ORACLE: FAIL" + the failing tests / census reason.
 
@@ -129,8 +129,8 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 1 FOUNDATION. REAL tools, cwd = repo root. Per game_out/SPEC.md, harden the engine into the
-          permanent core and ADD game_out/foundation.test.js (node --test): a SOLVER<->ENGINE EQUIVALENCE
+          STAGE 1 FOUNDATION. REAL tools, cwd = repo root. Per out/factory/SPEC.md, harden the engine into the
+          permanent core and ADD out/factory/foundation.test.js (node --test): a SOLVER<->ENGINE EQUIVALENCE
           test (the solver's solution actually wins under the engine), a PURITY test (no shared mutable state /
           wall-clock / RNG in a tick), and a TWIN-RUN determinism test (same input -> identical frames). Do
           NOT rename engine.js or move tests. On a FAIL retry, read the failing output and fix. End "FOUNDATION: BUILT".
@@ -140,7 +140,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd game_out && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "FOUNDATION: PASS" if NODE_EXIT=0, else "FOUNDATION: FAIL"
           + the failing tests.
 
@@ -154,10 +154,10 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 2 DIFFICULTY CONTRACT. REAL tools, cwd = repo root. Per game_out/SPEC.md, add game_out/
+          STAGE 2 DIFFICULTY CONTRACT. REAL tools, cwd = repo root. Per out/factory/SPEC.md, add out/factory/
           contract.js: 6-10 computable gates over (level, solution, frames) — default-outcome, structural
           minimums, ANTI-GREEDY (the obvious line must not win), UNIQUENESS, a technique-tier ladder, sequence
-          shape, failure legibility. Add game_out/contract.test.js with a STARTER band (passes all gates) and
+          shape, failure legibility. Add out/factory/contract.test.js with a STARTER band (passes all gates) and
           SOFT fixtures (each must be REJECTED by the gate it targets). On a FAIL retry, fix the cause. End
           "CONTRACT: BUILT".
 
@@ -166,7 +166,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd game_out && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "CONTRACT: PASS" if NODE_EXIT=0 (starter passes AND soft
           fixtures are rejected), else "CONTRACT: FAIL" + the failing tests.
 
@@ -180,11 +180,11 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 3 CONTENT ENGINE. REAL tools, cwd = repo root. Per game_out/SPEC.md, add game_out/baker.js: a
+          STAGE 3 CONTENT ENGINE. REAL tools, cwd = repo root. Per out/factory/SPEC.md, add out/factory/baker.js: a
           curriculum graph (insights + dependencies) and a SOLVER-GATED generate-and-test baker that accepts a
           level iff the solver proves it solvable, unique-optimal per contract, AND it teaches its assigned
-          insight (revelation certificate). Run the baker to write game_out/pack.json (every insight covered)
-          and game_out/rejections.json (per-gate census). Add game_out/content.test.js asserting: pack.json
+          insight (revelation certificate). Run the baker to write out/factory/pack.json (every insight covered)
+          and out/factory/rejections.json (per-gate census). Add out/factory/content.test.js asserting: pack.json
           exists, EVERY curriculum insight has >=1 level, and each packed level is solvable+unique via the
           solver. On a FAIL retry, fix. End "CONTENT: BUILT".
 
@@ -193,7 +193,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd game_out && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "CONTENT: PASS" if NODE_EXIT=0 (coverage + per-level
           solvability tests green), else "CONTENT: FAIL" + the failing tests.
 
@@ -207,12 +207,12 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 4 SHELL & RETENTION. REAL tools, cwd = repo root. Per game_out/SPEC.md, build the playable PWA
-          shell: game_out/index.html + game_out/app.js (a flat-screen router, selection screen, DAILY [UTC
+          STAGE 4 SHELL & RETENTION. REAL tools, cwd = repo root. Per out/factory/SPEC.md, build the playable PWA
+          shell: out/factory/index.html + out/factory/app.js (a flat-screen router, selection screen, DAILY [UTC
           date->seed->same level, no backend], ENDLESS, and a HINT LADDER orient->eliminate->move->step-through
-          driven by the solver). Add game_out/shell.test.js (node --test, logic only — no browser): Daily seed
+          driven by the solver). Add out/factory/shell.test.js (node --test, logic only — no browser): Daily seed
           -> identical level (determinism), a grace-streak rule, and hint eureka-integrity. Then audit for DARK
-          PATTERNS (graphs/oracleforge/vendor/agents/ethics-auditor.md) and record game_out/ETHICS.md (zero
+          PATTERNS (graphs/oracleforge/vendor/agents/ethics-auditor.md) and record out/factory/ETHICS.md (zero
           unmitigated). On a FAIL retry, fix. End "SHELL: BUILT".
 
     - id: shell_verify
@@ -220,8 +220,8 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd game_out && node --test
-          2>&1; echo "NODE_EXIT=$?". Also confirm game_out/ETHICS.md exists and records no UNMITIGATED dark
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
+          2>&1; echo "NODE_EXIT=$?". Also confirm out/factory/ETHICS.md exists and records no UNMITIGATED dark
           pattern. End with EXACTLY "SHELL: PASS" if NODE_EXIT=0 AND ethics clean, else "SHELL: FAIL" + reason.
 
     - id: shl_gate
@@ -234,10 +234,10 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 5 CREATION & SHARING. REAL tools, cwd = repo root. Per game_out/SPEC.md, add game_out/codec.js:
+          STAGE 5 CREATION & SHARING. REAL tools, cwd = repo root. Per out/factory/SPEC.md, add out/factory/codec.js:
           a versioned URL codec (encode/decode a level, STRICT decoder, content hash, schemaVersion additive-
           only with a named migration registry) + pure editor reducers (import re-verifies via the solver).
-          Add game_out/codec.test.js: ROUNDTRIP, FUZZ (random/garbled input never throws unhandled), reducer
+          Add out/factory/codec.test.js: ROUNDTRIP, FUZZ (random/garbled input never throws unhandled), reducer
           tests, and a frozen migration fixture per version. On a FAIL retry, fix. End "CODEC: BUILT".
 
     - id: share_verify
@@ -245,7 +245,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd game_out && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "CODEC: PASS" if NODE_EXIT=0 (roundtrip/fuzz/migration
           green), else "CODEC: FAIL" + the failing tests.
 
@@ -259,13 +259,13 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 6 SHIP. REAL tools, cwd = repo root. Per game_out/SPEC.md, assemble the deliverable: a PWA
-          service worker game_out/sw.js (precache-everything, skipWaiting + clients.claim, a VERSION constant)
-          and ONE Cloudflare Worker game_out/worker.js (shape: graphs/oracleforge/vendor/templates/ops/worker.js)
+          STAGE 6 SHIP. REAL tools, cwd = repo root. Per out/factory/SPEC.md, assemble the deliverable: a PWA
+          service worker out/factory/sw.js (precache-everything, skipWaiting + clients.claim, a VERSION constant)
+          and ONE Cloudflare Worker out/factory/worker.js (shape: graphs/oracleforge/vendor/templates/ops/worker.js)
           exporting `default { fetch(request, env) }`: static asset passthrough, POST /api/comment
           (validate->store->204, junk->400), POST /api/hint (salted hash of IP + UTC day, per-day grant, 429 on
           scarcity, NO raw IP / NO cookies), GET /api/comments (token-gated), feedback with a 1-5 rating + a
-          REGRET probe. Add game_out/smoke.test.js (node --test) that imports worker.js and calls its fetch()
+          REGRET probe. Add out/factory/smoke.test.js (node --test) that imports worker.js and calls its fetch()
           IN-PROCESS with mock Request objects + a stub env (no network, no long-lived server): assert comment
           204, junk 400, hint 429 on the 2nd same-day call, and that sw.js VERSION matches package.json version.
           Do NOT run `wrangler dev` or any production deploy. On a FAIL retry, fix. End "SHIP: BUILT".
@@ -275,7 +275,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd game_out && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "SHIP: PASS" if NODE_EXIT=0 (all in-process smoke checks
           + version-sync green), else "SHIP: FAIL" + the failing tests.
 
@@ -289,7 +289,7 @@ graph:
       config:
         effort: medium
         role: |
-          The game in game_out/ passed EVERY independently-verified gate. Bash: ls -R game_out (skip
+          The game in out/factory/ passed EVERY independently-verified gate. Bash: ls -R out/factory (skip
           node_modules). Produce the PRODUCTION REPORT: game name + one-line pitch; the measured oracle census
           numbers; what each stage produced (engine/solver, contract, level-pack size, shell modes, codec,
           PWA+Worker); and the exact commands to PLAY it locally and to DEPLOY it (the single `wrangler deploy`
@@ -326,7 +326,7 @@ graph:
         role: |
           A build stage exhausted its retries (upstream holds its last failing output). You have Bash (cwd =
           repo root). Identify which stage/gate ran out of retries, summarize the last failing tests, and state
-          the suspected blocker + the smallest change likely to unblock it. The partial game is in game_out/.
+          the suspected blocker + the smallest change likely to unblock it. The partial game is in out/factory/.
           End with EXACTLY "FACTORY: BLOCKED — needs attention".
 
   edges:

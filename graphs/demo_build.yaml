@@ -10,11 +10,11 @@ graph:
       type: literal
       config:
         content: |
-          Build a Python module at ./graphdemo/strutil.py with a function slugify(s: str) -> str
+          Build a Python module at ./out/demo_build/strutil.py with a function slugify(s: str) -> str
           that: lowercases, strips leading/trailing whitespace, and replaces every run of
           non-alphanumeric characters with a single hyphen, with no leading or trailing hyphens.
           Examples: slugify("Hello,  World!") == "hello-world"; slugify("  A.B__C ") == "a-b-c".
-          Also write pytest tests at ./graphdemo/test_strutil.py covering those examples and edge cases.
+          Also write pytest tests at ./out/demo_build/test_strutil.py covering those examples and edge cases.
 
     - id: builder
       type: agent
@@ -22,8 +22,8 @@ graph:
         effort: medium
         role: |
           You are the Programmer with REAL tools (Write/Edit/Bash). Implement the spec from upstream
-          using TDD: create ./graphdemo, write test_strutil.py FIRST, then strutil.py, then run
-          `ROOT="$PWD"; cd graphdemo && "$ROOT/.venv/bin/python" -m pytest -q`
+          using TDD: create ./out/demo_build, write test_strutil.py FIRST, then strutil.py, then run
+          `ROOT="$PWD"; cd out/demo_build && "$ROOT/.venv/bin/python" -m pytest -q`
           and iterate until it exits 0.
         instruction: |
           Finish your reply with EXACTLY one final line: "RESULT: PASS" if pytest exited 0,
@@ -34,7 +34,7 @@ graph:
       config:
         agentType: feature-dev:code-reviewer
         role: |
-          Read ./graphdemo/strutil.py and its tests. Briefly confirm slugify meets the spec
+          Read ./out/demo_build/strutil.py and its tests. Briefly confirm slugify meets the spec
           (lowercase, single hyphens, no leading/trailing hyphen) or list concrete issues. You are read-only.
 
     - id: reporter
@@ -42,7 +42,7 @@ graph:
       config:
         effort: low
         role: |
-          In ONE sentence, summarize what was built in ./graphdemo and the final test result,
+          In ONE sentence, summarize what was built in ./out/demo_build and the final test result,
           using the upstream messages.
 
   edges:

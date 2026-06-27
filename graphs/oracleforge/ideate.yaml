@@ -11,7 +11,7 @@
 #   args.input = "<path to an IDEA spec .md>"   (e.g. a Tandem spec)
 # Run (design new):                  args.input = "<a game idea / twist to design>"
 # Roles + solver/engine templates are VENDORED under graphs/oracleforge/vendor/ (self-contained);
-# build artifacts land in ./oracleprobe/.
+# build artifacts land in ./out/oracle/.
 graph:
   id: ideate
   description: ideation + oracle-fit with a REAL executed yield-census (oracleforge Stage 0)
@@ -112,7 +112,7 @@ graph:
         role: |
           You are the ORACLE ENGINEER with REAL tools. This is the harness's key upgrade over a self-certified
           gate: BUILD and RUN a real oracle + yield census for the synthesized game (upstream), in Python,
-          into ./oracleprobe/ . Reference the patterns in graphs/oracleforge/vendor/templates/solver/solver.js
+          into ./out/oracle/ . Reference the patterns in graphs/oracleforge/vendor/templates/solver/solver.js
           (lazy IDDFS, prune on visited cells, uniqueness via countSolutions) and graphs/oracleforge/vendor/templates/engine/simulation.js
           (deterministic plan-then-run, fixed tick order, pure stepTick).
           Implement (pure, no RNG at solve time):
@@ -126,8 +126,8 @@ graph:
                on >=2-move boards), plus node-budget overflow count.
             4. tests/test_logic.py — pytest pinning the GOLDEN TRACE + a stall/edge case + a win-predicate case.
           Run BOTH and read real output:
-            ROOT="$PWD"; cd oracleprobe && "$ROOT/.venv/bin/python" -m pytest -q
-            ROOT="$PWD"; cd oracleprobe && "$ROOT/.venv/bin/python" census.py
+            ROOT="$PWD"; cd out/oracle && "$ROOT/.venv/bin/python" -m pytest -q
+            ROOT="$PWD"; cd out/oracle && "$ROOT/.venv/bin/python" census.py
           If the spec already CLAIMS census numbers, compare your MEASURED numbers against them.
         instruction: |
           Finish with EXACTLY one final line: "ORACLE: PASS" if pytest exits 0 (golden trace passes) AND the

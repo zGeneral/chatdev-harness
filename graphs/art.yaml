@@ -31,15 +31,15 @@ graph:
             set -a; . .env; set +a   # sets GEMINI_API_KEY
           Then generate the image, substituting <PROMPT> with the art director's prompt from upstream
           (properly shell-quoted), after creating the output dir:
-            mkdir -p artdemo
+            mkdir -p out/art
             .venv/bin/python tools/genimage.py \
               --model gemini-2.5-flash-image \
-              --output-dir artdemo \
+              --output-dir out/art \
               --name hero \
               --prompt "<PROMPT>"
           The script (repo-local, stdlib-only) prints the saved PNG path. If it prints an HTTP error, surface it verbatim.
         instruction: |
-          Then check the PNG: `ls -l artdemo/hero.png`.
+          Then check the PNG: `ls -l out/art/hero.png`.
           Finish with EXACTLY one final line: "RESULT: PASS" if hero.png exists and is >0 bytes, else "RESULT: FAIL".
 
     - id: reporter

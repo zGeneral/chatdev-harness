@@ -4,7 +4,7 @@
 # (a too-easy/greedy/ambiguous level is rejected) and PASS on the hand-authored starter band.
 #
 # Input (args.input): the working oracle (foundation output) + the designer's difficulty beliefs (or a
-# path). Artifacts land in ./difficulty_build/ . oracleforge is read-only reference.
+# path). Artifacts land in ./out/difficulty/ . oracleforge is read-only reference.
 graph:
   id: difficulty
   description: Stage 2 — computable difficulty contract, gated by soft-fail / starter-pass fixtures
@@ -38,7 +38,7 @@ graph:
         effort: high
         role: |
           You are the CONTRACT ENGINEER with REAL tools. Implement the gate table (upstream) into
-          ./difficulty_build/ (Python), reusing the foundation solver where available:
+          ./out/difficulty/ (Python), reusing the foundation solver where available:
             - contract.py: each gate as a pure predicate over (level, solution, frames).
             - fixtures/: a STARTER band (hand-authored levels that SHOULD pass all gates) and SOFT fixtures
               (deliberately too-easy / greedy-winnable / multi-solution / illegible levels that SHOULD be
@@ -47,7 +47,7 @@ graph:
               it targets (a contract that passes everything is not a contract).
           On a FIX pass the upstream has failing output — fix the cause.
         instruction: |
-          Run: ROOT="$PWD"; cd difficulty_build && "$ROOT/.venv/bin/python" -m pytest -q
+          Run: ROOT="$PWD"; cd out/difficulty && "$ROOT/.venv/bin/python" -m pytest -q
           End with EXACTLY "CONTRACT: PASS" (pytest exit 0: starter passes AND soft fixtures are rejected) or
           "CONTRACT: FAIL" + the failing assertions.
 
@@ -62,7 +62,7 @@ graph:
         effort: medium
         role: |
           You have Bash. Independently verify: run
-            ROOT="$PWD"; cd difficulty_build && "$ROOT/.venv/bin/python" -m pytest -q
+            ROOT="$PWD"; cd out/difficulty && "$ROOT/.venv/bin/python" -m pytest -q
           Confirm BOTH that the starter band passes and the soft fixtures are rejected. End with EXACTLY
           "VERIFIED: PASS" or "VERIFIED: FAIL".
 

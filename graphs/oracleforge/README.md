@@ -7,7 +7,7 @@ the **GUI**. See [`PLAN.md`](PLAN.md) for the full stage→graph mapping and rat
 
 ## Autonomous factory (idea → production in ONE run)
 **`factory.yaml`** is the assembly line: give it a game idea and it runs **Stage 0→6 autonomously** on a
-shared `./game_out/` directory, producing a shippable JS/web game (PWA + Cloudflare Worker). Each stage
+shared `./out/factory/` directory, producing a shippable JS/web game (PWA + Cloudflare Worker). Each stage
 **build → independent verify → bounded retry**; a stage that can't pass stops cleanly at `blocked_build`,
 an oracle-unfit idea stops at `blocked_idea`, and success ends `PRODUCTION: READY`. Every gate is
 re-checked by a separate verifier that re-runs the real `node --test` (a stage can't self-certify a fake

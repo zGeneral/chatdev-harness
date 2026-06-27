@@ -5,7 +5,7 @@
 #   - personal-rag `game-design` notebook = external knowledge (books).
 #   - chatdev-memory `lessons:gamedev`    = the factory's own experience (grows every green build).
 # Verified-only: reflect stores lessons ONLY when the build went green (objective test signal).
-# Builds into ./learndemo. Run:  /run-graph graphs/game_factory_learning.yaml
+# Builds into ./out/game_factory_learning. Run:  /run-graph graphs/game_factory_learning.yaml
 graph:
   id: game_factory_learning
   description: recall(books+lessons) -> design -> core -> polish -> qa -> verify -> reflect(store)
@@ -14,7 +14,7 @@ graph:
       type: literal
       config:
         content: |
-          Build a small, polished arcade game in Python+Pygame in ./learndemo: "Fruit Catch" — a
+          Build a small, polished arcade game in Python+Pygame in ./out/game_factory_learning: "Fruit Catch" — a
           basket at the bottom moves left/right (arrow keys, clamped to the screen), fruit falls from
           random x at increasing speed, catching fruit scores +1, a missed fruit ends the game, R
           restarts, never a pure-black background, 60 FPS via Clock, clean QUIT.
@@ -46,7 +46,7 @@ graph:
         effort: medium
         role: |
           You are the game designer/architect. From the brief + the "Design knowledge (books)" + the
-          "Lessons from past builds" upstream, produce a concrete implementation spec for ./learndemo:
+          "Lessons from past builds" upstream, produce a concrete implementation spec for ./out/game_factory_learning:
           pure logic.py (no pygame: basket clamp, fruit spawn/fall, catch/miss, scoring, state) with a
           pytest suite; game.py (Pygame shell + a HEADLESS SMOKE MODE: when env GAME_SMOKE_FRAMES=N is
           set, run N frames under SDL_VIDEODRIVER=dummy then quit cleanly). EXPLICITLY apply any
@@ -57,11 +57,11 @@ graph:
       config:
         effort: medium
         role: |
-          You are the Programmer with REAL tools. Build ./learndemo per the upstream spec, TDD: write
+          You are the Programmer with REAL tools. Build ./out/game_factory_learning per the upstream spec, TDD: write
           tests/test_logic.py first (pure logic, no pygame), then logic.py, then game.py with the
           GAME_SMOKE_FRAMES headless smoke mode. Verify BOTH:
-            ROOT="$PWD"; cd learndemo && "$ROOT/.venv/bin/python" -m pytest -q
-            ROOT="$PWD"; cd learndemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 "$ROOT/.venv/bin/python" game.py
+            ROOT="$PWD"; cd out/game_factory_learning && "$ROOT/.venv/bin/python" -m pytest -q
+            ROOT="$PWD"; cd out/game_factory_learning && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 "$ROOT/.venv/bin/python" game.py
           Iterate until pytest exits 0 AND the headless run exits 0.
         instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if pytest exit 0 AND headless smoke exit 0, else "RESULT: FAIL".'
 
@@ -74,7 +74,7 @@ graph:
       config:
         effort: medium
         role: |
-          You are the Polish Developer. Improve ./learndemo/game.py ONLY (clear rendering, HUD, feedback)
+          You are the Polish Developer. Improve ./out/game_factory_learning/game.py ONLY (clear rendering, HUD, feedback)
           WITHOUT breaking the headless smoke mode, the mandatory reqs, or moving logic out of logic.py.
           Re-run pytest + the headless GAME_SMOKE_FRAMES run; both must stay green.
         instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if both gates still pass, else "RESULT: FAIL".'
@@ -84,7 +84,7 @@ graph:
       config:
         agentType: feature-dev:code-reviewer
         role: |
-          Review ./learndemo: logic.py pygame-free and tested, headless smoke mode present, mandatory
+          Review ./out/game_factory_learning: logic.py pygame-free and tested, headless smoke mode present, mandatory
           reqs met (no pure-black bg, R restart, 60 FPS, clean QUIT). List concrete issues or say LGTM. Read-only.
 
     - id: verify
@@ -93,8 +93,8 @@ graph:
         effort: low
         role: |
           Run BOTH and report, editing nothing:
-            ROOT="$PWD"; cd learndemo && "$ROOT/.venv/bin/python" -m pytest -q
-            ROOT="$PWD"; cd learndemo && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 "$ROOT/.venv/bin/python" game.py; echo "SMOKE_EXIT=$?"
+            ROOT="$PWD"; cd out/game_factory_learning && "$ROOT/.venv/bin/python" -m pytest -q
+            ROOT="$PWD"; cd out/game_factory_learning && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy GAME_SMOKE_FRAMES=120 "$ROOT/.venv/bin/python" game.py; echo "SMOKE_EXIT=$?"
           Report logic tests passed/total, pytest exit, and smoke exit.
 
     - id: reflect
@@ -103,7 +103,7 @@ graph:
         effort: medium
         role: |
           You are the Reflection step that makes the factory self-improving. The upstream message is the
-          verify outcome. You have Bash; read ./learndemo/logic.py, game.py, and tests/test_logic.py to
+          verify outcome. You have Bash; read ./out/game_factory_learning/logic.py, game.py, and tests/test_logic.py to
           ground your reflection.
           VERIFIED-ONLY RULE: only store SUCCESS lessons if the build was GREEN (pytest exit 0 AND smoke
           exit 0 in the verify outcome). If it was NOT green, do not store success lessons; you may store

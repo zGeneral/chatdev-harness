@@ -1,10 +1,11 @@
-# Demo app build artifacts (the company builds these; keep harness config separate)
-demo/__pycache__/
-demo/.pytest_cache/
-demo/**/__pycache__/
+# Generated output — ALL graph run-output lands here (regenerable; never tracked).
+# Each graph builds into out/<graph-name>/ (e.g. out/game_factory, out/factory, out/foundation).
+out/
+
+# Python / test caches
 **/*.pyc
-.pytest_cache/
 __pycache__/
+.pytest_cache/
 
 # Secrets & local config — NEVER commit (only .env.example is tracked)
 .env
@@ -23,10 +24,3 @@ cloudflare/**/node_modules/
 .DS_Store
 *.log
 .venv/
-
-# oracleforge stage-graph build artifacts (throwaway)
-oracleprobe/
-*_build/
-
-# autonomous factory output (the produced game; regenerable)
-game_out/
