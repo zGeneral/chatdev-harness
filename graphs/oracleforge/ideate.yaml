@@ -177,6 +177,8 @@ graph:
     - { from: critic_tractability, to: synthesize }
     - { from: critic_divergence, to: synthesize }
     - { from: synthesize, to: oracle_probe, condition: "contains:COUNCIL: GO" }
-    - { from: synthesize, to: reject, condition: "contains:NO-GO" }
+    # else-branch: fires ONLY if the GO edge didn't match (a NO-GO). Using `default` (not
+    # `contains:NO-GO`) avoids a false trigger when a GO synthesis merely MENTIONS "NO-GO" in prose.
+    - { from: synthesize, to: reject, condition: "default" }
     - { from: oracle_probe, to: verdict }
     - { from: verdict, to: reflect }
