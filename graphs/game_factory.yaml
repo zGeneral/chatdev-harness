@@ -38,8 +38,11 @@ graph:
         effort: medium
         role: |
           You are the Polish Developer. Add tasteful visual juice to ./out/game_factory/game.py (color, simple
-          particles/feedback, centered HUD) WITHOUT breaking the headless smoke mode or the logic tests, and
-          WITHOUT moving logic out of logic.py. Re-run the pytest + the headless GAME_SMOKE_FRAMES run; both must stay green.
+          particles/feedback, centered HUD) per docs/grounding/motion-math.md — easing (never linear +k/frame),
+          volume-preserving squash & stretch on hits/bounces, anticipation, follow-through. Do this WITHOUT
+          breaking the headless smoke mode or the logic tests, and WITHOUT moving logic out of logic.py. If the
+          upstream is a PLAYABILITY: WEAK report, address its specific feel/payoff findings. Re-run the pytest +
+          the headless GAME_SMOKE_FRAMES run; both must stay green.
         instruction: 'Finish with EXACTLY one line: "RESULT: PASS" if both gates still pass, else "RESULT: FAIL".'
 
     - id: qa
@@ -48,7 +51,27 @@ graph:
         agentType: feature-dev:code-reviewer
         role: |
           Review ./out/game_factory: is the logic genuinely pygame-free and tested, the headless smoke mode present,
-          and the mandatory reqs met (no pure-black bg, R restart, 60 FPS, clean QUIT)? List issues or say LGTM. Read-only.
+          and the mandatory reqs met (no pure-black bg, R restart, 60 FPS, clean QUIT)? Also apply the objective
+          UI/UX rules in docs/grounding/game-ui-review.md (readable text/contrast, state not color-alone, no
+          hardcoded input prompts, no center-screen obstruction). List issues or say LGTM. Read-only.
+
+    - id: playability
+      type: agent
+      config:
+        agentType: feature-dev:code-reviewer
+        role: |
+          Acting as the PLAYABILITY ASSESSOR (see .claude/agents/playability-assessor.md), critique
+          ./out/game_factory for GAME FEEL + PLAYABILITY before the build is cleared — read-only, edit nothing:
+          responsiveness (input latency), impact/payoff (does scoring/bounce/game-over render layered feedback,
+          not just mutate state?), motion juice (per docs/grounding/motion-math.md — flag dead linear `+k/frame`
+          motion, missing squash & stretch), clarity (goal/state readable; not color-alone), loop closure
+          (clear win/lose + restart), peak moments, and difficulty pacing. Cite code (file:line) for each.
+          End with EXACTLY "PLAYABLE: OK" if there are no high-severity feel/playability problems, else
+          "PLAYABLE: WEAK" + a prioritized findings list (severity, location, the dead/flat issue, a concrete fix).
+
+    - id: play_gate
+      type: loop_counter
+      config: { max_iterations: 2 }
 
     - id: verify
       type: agent
@@ -66,4 +89,8 @@ graph:
     - { from: core, to: gate, condition: "contains:FAIL" }
     - { from: gate, to: core }
     - { from: polish, to: qa }
-    - { from: qa, to: verify }
+    - { from: qa, to: playability }
+    - { from: playability, to: verify, condition: "contains:PLAYABLE: OK" }
+    - { from: playability, to: play_gate, condition: "default" }
+    - { from: play_gate, to: polish }
+    - { from: play_gate, to: verify, condition: "exhausted" }
