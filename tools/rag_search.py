@@ -17,6 +17,7 @@ import json
 import os
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
@@ -54,9 +55,14 @@ def get_creds():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--notebook", required=True)
-    ap.add_argument("--query", required=True)
+    ap.add_argument("--query")
+    ap.add_argument("--query-hex")  # hex(encodeURIComponent(text)) — safe transport for untrusted text
     ap.add_argument("--top-k", type=int, default=5)
     a = ap.parse_args()
+    query = urllib.parse.unquote(bytes.fromhex(a.query_hex).decode("ascii")) if a.query_hex else (a.query or "")
+    if not query.strip():
+        sys.stderr.write("query (or --query-hex) required\n")
+        return 2
 
     url, tok = get_creds()
     if not url or not tok:
@@ -65,7 +71,7 @@ def main():
 
     req = urllib.request.Request(
         url.rstrip("/") + "/api/search",
-        data=json.dumps({"notebook": a.notebook, "query": a.query, "top_k": a.top_k}).encode(),
+        data=json.dumps({"notebook": a.notebook, "query": query, "top_k": a.top_k}).encode(),
         method="POST",
         headers={"Authorization": "Bearer " + tok, "Content-Type": "application/json", "User-Agent": UA},
     )

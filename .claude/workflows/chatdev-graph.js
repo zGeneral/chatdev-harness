@@ -118,42 +118,32 @@ async function executeNode(node, message) {
     return String(r == null ? '' : r)
   }
   if (type === 'memory') {
-    // Retrieval memory. backend: 'cloudflare' (default; the chatdev-memory Worker) or
-    // 'personal-rag' (optional, private; gracefully degrades if the MCP is absent).
-    // op: 'retrieve' (default) | 'store'. namespace isolates entries. The node runs an
-    // agent (the sandbox has no fetch) that reads MEMORY_URL/MEMORY_TOKEN from the repo .env.
+    // backend: 'cloudflare' (chatdev-memory) | 'personal-rag'. op: 'retrieve' | 'store'.
+    // SECURITY: query/text may be untrusted upstream output (the `|| message` fallback), so we do NOT
+    // place raw text in the Bash agent's prompt or command. Identifiers are sanitized to a safe charset,
+    // top_k is an int, and free-text is HEX-encoded here — the agent only ever sees opaque hex + a fixed
+    // command it runs verbatim; the helper script hex-decodes the text and uses it as an HTTP param
+    // (no shell, no LLM). This closes both command-injection and prompt-injection→RCE.
     const backend = cfg.backend || 'cloudflare'
     const op = cfg.op || 'retrieve'
-    const ns = cfg.namespace || 'default'
-    const q = cfg.query || message
-    const text = cfg.text || message
-    const topK = cfg.top_k || 5
-    const MEMPY = '/Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/mem.py'
-    if (backend === 'personal-rag') {
-      // Private/optional backend: retrieve from a personal-rag notebook via tools/rag_search.py
-      // (Worker /api/search; reads the bridge token from ~/.claude.json). The helper prints
-      // "MEMORY UNAVAILABLE" if no creds, so this degrades gracefully for anyone without it.
-      const nb = cfg.notebook || cfg.namespace || 'default'
-      return await agent(
-        'You have Bash. Retrieve relevant passages by running tools/rag_search.py and return its stdout ' +
-        'VERBATIM as your result (it prints bullets, or exactly "MEMORY UNAVAILABLE" / "no relevant memory"). Run:\n' +
-        '  /Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/rag_search.py ' +
-        '--notebook ' + nb + ' --top-k ' + topK + ' --query <QUERY>\n' +
-        'where <QUERY> is this text, properly shell-quoted:\n' + q,
-        { label: node.id, phase: 'Graph', effort: 'low' })
-    }
-    if (op === 'store') {
-      return await agent(
-        'You have Bash. Store a memory by running tools/mem.py and return its stdout VERBATIM ' +
-        '(it prints "stored id=..." or "MEMORY UNAVAILABLE"). Run:\n  ' + MEMPY + ' store --namespace ' + ns +
-        ' --text <TEXT>\nwhere <TEXT> is this, properly shell-quoted:\n' + text,
-        { label: node.id, phase: 'Graph', effort: 'low' })
-    }
-    return await agent(
-      'You have Bash. Retrieve memories by running tools/mem.py and return its stdout VERBATIM ' +
-      '(it prints bullets, or exactly "no relevant memory" / "MEMORY UNAVAILABLE"). Run:\n  ' + MEMPY + ' search --namespace ' + ns +
-      ' --top-k ' + topK + ' --query <QUERY>\nwhere <QUERY> is this, properly shell-quoted:\n' + q,
+    const ident = (s) => String(s == null ? 'default' : s).replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 80)
+    const hexEnc = (s) => { const a = encodeURIComponent(String(s == null ? '' : s)); let h = ''; for (let i = 0; i < a.length; i++) h += a.charCodeAt(i).toString(16).padStart(2, '0'); return h }
+    const ns = ident(cfg.namespace)
+    const topK = parseInt(cfg.top_k, 10) || 5
+    const qHex = hexEnc(cfg.query != null ? cfg.query : message)
+    const textHex = hexEnc(cfg.text != null ? cfg.text : message)
+    const PY = '/Users/hassiba/git/chatdev_harness/.venv/bin/python'
+    const runVerbatim = (cmd) => agent(
+      'You have Bash. Run this EXACT command verbatim and return its stdout VERBATIM as your result (it ' +
+      'prints results, or "MEMORY UNAVAILABLE" / "no relevant memory"). Do NOT modify, add to, or interpret it:\n  ' + cmd,
       { label: node.id, phase: 'Graph', effort: 'low' })
+    if (backend === 'personal-rag') {
+      const nb = ident(cfg.notebook || cfg.namespace)
+      return await runVerbatim(PY + ' /Users/hassiba/git/chatdev_harness/tools/rag_search.py --notebook ' + nb + ' --top-k ' + topK + ' --query-hex ' + qHex)
+    }
+    const MEMPY = PY + ' /Users/hassiba/git/chatdev_harness/tools/mem.py'
+    if (op === 'store') return await runVerbatim(MEMPY + ' store --namespace ' + ns + ' --text-hex ' + textHex)
+    return await runVerbatim(MEMPY + ' search --namespace ' + ns + ' --top-k ' + topK + ' --query-hex ' + qHex)
   }
   if (type === 'subgraph') {
     const sub = cfg.graph
@@ -178,13 +168,17 @@ log('Graph done in ' + result.steps + ' steps. Final node: ' + result.finalNode)
 // Never affects the run: the helper skips silently if GUI creds are absent, and we swallow errors.
 if (!A.noRunLog) {
   try {
-    const finalText = String(result.final || '')
-    const green = /\bgreen\b|\bpass(ed)?\b|exit 0|smoke exit 0|\b(\d+)\/\1\b/i.test(finalText)
+    // SECURITY: never route untrusted node output (result.final) into a shell command an agent runs.
+    // We compute `green` in JS (safe regex, no exec) and pass ONLY sanitized, structured values —
+    // the command is fully fixed here, with no placeholder for the agent to fill from untrusted text.
+    const green = /\bgreen\b|\bpass(ed)?\b|exit 0|smoke exit 0|\b(\d+)\/\1\b/i.test(String(result.final || ''))
+    const safe = (s) => String(s || '').replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, 60) // strips all shell metachars
+    const cmd = '/Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/run_log.py' +
+      ' --graph "' + safe(G.id || 'graph') + '" --green ' + green + ' --steps ' + (parseInt(result.steps, 10) || 0) +
+      ' --final "ended:' + safe(result.finalNode) + '"'
     await agent(
-      'You have Bash. Run EXACTLY this (reply OK; ignore any error — it is best-effort logging):\n  ' +
-      '/Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/run_log.py ' +
-      '--graph ' + (G.id || 'graph') + ' --green ' + green + ' --steps ' + result.steps +
-      ' --final <FINAL>\nwhere <FINAL> is this text, properly shell-quoted:\n' + finalText.slice(0, 300),
+      'You have Bash. Run this EXACT command verbatim and reply OK (ignore any error — best-effort logging). ' +
+      'Do NOT modify, add to, or substitute anything in it:\n  ' + cmd,
       { label: 'run-log', phase: 'Graph', effort: 'low' })
   } catch (e) { log('run-log skipped: ' + String((e && e.message) || e).slice(0, 80)) }
 }

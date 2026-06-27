@@ -10,6 +10,15 @@ const GH = { owner: 'zGeneral', repo: 'chatdev-harness', branch: 'main' };
 
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'content-type': 'application/json' } });
 
+// Constant-time token comparison: compare fixed-length SHA-256 digests (no early-exit, no length leak).
+async function safeEqual(a, b) {
+  const enc = new TextEncoder();
+  const [ha, hb] = await Promise.all([crypto.subtle.digest('SHA-256', enc.encode(String(a || ''))), crypto.subtle.digest('SHA-256', enc.encode(String(b || '')))]);
+  const x = new Uint8Array(ha), y = new Uint8Array(hb);
+  let r = 0; for (let i = 0; i < x.length; i++) r |= x[i] ^ y[i];
+  return r === 0 && !!a && !!b;
+}
+
 // Call a bound Worker (service binding) directly — avoids same-account public-fetch error 1042.
 async function svc(binding, token, path, method, body) {
   const init = { method, headers: { 'User-Agent': UA, Accept: 'application/json' } };
@@ -32,7 +41,7 @@ export default {
     // --- auth (everything except /api/health) ---
     const auth = request.headers.get('authorization') || '';
     const tok = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-    if (!env.GUI_TOKEN || tok !== env.GUI_TOKEN) return json({ error: 'unauthorized' }, 401);
+    if (!env.GUI_TOKEN || !(await safeEqual(tok, env.GUI_TOKEN))) return json({ error: 'unauthorized' }, 401);
 
     try {
       const body = request.method === 'POST' ? await request.json().catch(() => ({})) : {};
