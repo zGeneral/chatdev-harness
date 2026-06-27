@@ -16,6 +16,9 @@ secret.txt
 cloudflare/**/node_modules/
 **/.wrangler/
 
+# Transient memory-node temp dir (chmod 700; created at runtime)
+.runtmp/
+
 # Scratch / OS
 .DS_Store
 *.log
