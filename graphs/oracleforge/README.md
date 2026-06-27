@@ -5,7 +5,18 @@ puzzle games onto the harness's declarative graph engine, adding the harness's f
 execution** (solvers/censuses/tests actually run and gate), **retrievable + self-growing memory**, and
 the **GUI**. See [`PLAN.md`](PLAN.md) for the full stage→graph mapping and rationale.
 
-## The graphs (run with `/run-graph graphs/oracleforge/<name>.yaml`)
+## Autonomous factory (idea → production in ONE run)
+**`factory.yaml`** is the assembly line: give it a game idea and it runs **Stage 0→6 autonomously** on a
+shared `./game_out/` directory, producing a shippable JS/web game (PWA + Cloudflare Worker). Each stage
+**build → independent verify → bounded retry**; a stage that can't pass stops cleanly at `blocked_build`,
+an oracle-unfit idea stops at `blocked_idea`, and success ends `PRODUCTION: READY`. Every gate is
+re-checked by a separate verifier that re-runs the real `node --test` (a stage can't self-certify a fake
+green). Hardened by an adversarial review (anchored gate markers; canonical layout; on-exhaust routing).
+```
+/run-graph graphs/oracleforge/factory.yaml   with args.input = "<your game idea>"
+```
+
+## The stage graphs (run one at a time with `/run-graph graphs/oracleforge/<name>.yaml`)
 | graph | oracleforge stage | real gate |
 |---|---|---|
 | `ideate.yaml` | Ideation + **Oracle-fit (Stage 0)** | council (independent critics, fan-in) **+ an oracle/yield-census that actually executes** |

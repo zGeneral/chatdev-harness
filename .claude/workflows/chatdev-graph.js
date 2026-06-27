@@ -29,6 +29,7 @@ const EFFORT = A.effort || 'medium'
 function evalCond(condition, text) {
   if (condition === undefined || condition === null || condition === true || condition === 'true' || condition === '') return true
   if (condition === 'default') return false // handled by the propagation fallback
+  if (condition === 'exhausted') return false // handled by loop_counter on-exhaust propagation
   const s = String(condition)
   const t = String(text == null ? '' : text)
   if (s.startsWith('!contains:')) return !t.toLowerCase().includes(s.slice('!contains:'.length).toLowerCase())
@@ -81,7 +82,14 @@ async function runGraph(graph, input, executeNodeFn, logFn) {
     outputs[id] = out
     trace.push({ node: id, type: node.type, out: String(out).slice(0, 200) })
 
-    if (blocked) continue
+    if (blocked) {
+      // loop_counter hit its cap: take any on-exhaust edge(s) (e.g. to a blocked terminal) so a stuck
+      // path reports cleanly instead of dying silently; if none, the path simply ends (legacy behavior).
+      for (const e of edges.filter(x => x.from === id && x.condition === 'exhausted')) {
+        queue.push({ id: e.to, message: e.carry_data ? out : '' })
+      }
+      continue
+    }
     // propagate along outgoing edges; support a single 'default' (else) edge
     const outgoing = edges.filter(e => e.from === id)
     const nonDefault = outgoing.filter(e => e.condition !== 'default')
