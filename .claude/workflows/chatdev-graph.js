@@ -173,4 +173,19 @@ if (!G || !G.nodes) {
 log('Graph "' + (G.id || 'unnamed') + '": ' + (G.nodes || []).length + ' nodes, ' + (G.edges || []).length + ' edges.')
 const result = await runGraph(G, initialInput, executeNode, log)
 log('Graph done in ' + result.steps + ' steps. Final node: ' + result.finalNode)
+
+// Best-effort run logging to the GUI dashboard (tools/run_log.py -> chatdev-gui Worker).
+// Never affects the run: the helper skips silently if GUI creds are absent, and we swallow errors.
+if (!A.noRunLog) {
+  try {
+    const finalText = String(result.final || '')
+    const green = /\bgreen\b|\bpass(ed)?\b|exit 0|smoke exit 0|\b(\d+)\/\1\b/i.test(finalText)
+    await agent(
+      'You have Bash. Run EXACTLY this (reply OK; ignore any error — it is best-effort logging):\n  ' +
+      '/Users/hassiba/git/chatdev_harness/.venv/bin/python /Users/hassiba/git/chatdev_harness/tools/run_log.py ' +
+      '--graph ' + (G.id || 'graph') + ' --green ' + green + ' --steps ' + result.steps +
+      ' --final <FINAL>\nwhere <FINAL> is this text, properly shell-quoted:\n' + finalText.slice(0, 300),
+      { label: 'run-log', phase: 'Graph', effort: 'low' })
+  } catch (e) { log('run-log skipped: ' + String((e && e.message) || e).slice(0, 80)) }
+}
 return { id: G.id, final: result.final, finalNode: result.finalNode, steps: result.steps, trace: result.trace }

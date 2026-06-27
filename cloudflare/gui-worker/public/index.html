@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ChatDev Harness — Console</title>
+  <link rel="stylesheet" href="/style.css" />
+  <!-- No external scripts: YAML is parsed server-side; the graph diagram is rendered with
+       a dependency-free custom SVG renderer in /app.js (self-contained, no CDN). -->
+</head>
+<body>
+  <!-- token gate -->
+  <div id="gate" class="gate">
+    <div class="gate-box">
+      <h1>ChatDev Harness — Console</h1>
+      <p>Enter the access token (the Worker's <code>GUI_TOKEN</code>).</p>
+      <input id="token-input" type="password" placeholder="GUI_TOKEN" autocomplete="off" />
+      <button id="token-go">Enter</button>
+      <p id="gate-err" class="err"></p>
+    </div>
+  </div>
+
+  <header>
+    <strong>ChatDev Harness</strong>
+    <nav>
+      <button data-tab="lessons" class="active">Lessons</button>
+      <button data-tab="notebooks">Notebooks</button>
+      <button data-tab="graphs">Graphs</button>
+      <button data-tab="runs">Runs</button>
+    </nav>
+    <button id="logout" title="Forget token">⎋</button>
+  </header>
+
+  <main>
+    <!-- LESSONS -->
+    <section id="lessons" class="tab active">
+      <div class="row">
+        <label>namespace <input id="ns" value="lessons:gamedev" /></label>
+        <button id="ns-refresh">List</button>
+        <input id="ns-q" placeholder="semantic search…" />
+        <button id="ns-search">Search</button>
+        <button id="lesson-add" class="primary">+ Add lesson</button>
+      </div>
+      <p class="hint">The factory's experiential memory (chatdev-memory). Edit re-embeds; delete removes the vector + text.</p>
+      <div id="lessons-list" class="cards"></div>
+    </section>
+
+    <!-- NOTEBOOKS -->
+    <section id="notebooks" class="tab">
+      <div class="row">
+        <button id="nb-refresh">Reload notebooks</button>
+        <select id="nb-select"></select>
+        <input id="nb-q" placeholder="search this notebook…" />
+        <button id="nb-search">Search</button>
+      </div>
+      <p class="hint">Your personal-rag knowledge base (read-only here). Pick a notebook and search it.</p>
+      <div id="nb-out" class="cards"></div>
+    </section>
+
+    <!-- GRAPHS -->
+    <section id="graphs" class="tab">
+      <div class="row">
+        <button id="g-refresh">Reload graphs</button>
+        <select id="g-select"></select>
+        <button id="g-render">Render</button>
+        <button id="g-copy">Copy YAML</button>
+        <button id="g-download">Download</button>
+      </div>
+      <p class="hint">Pipelines (<code>graphs/*.yaml</code> from GitHub). Edit the YAML → Render to preview. Save by copying back into the repo, then run with <code>/run-graph graphs/&lt;name&gt;.yaml</code>.</p>
+      <div class="split">
+        <textarea id="g-yaml" spellcheck="false" placeholder="select a graph…"></textarea>
+        <div id="g-diagram" class="diagram"></div>
+      </div>
+      <p id="g-err" class="err"></p>
+    </section>
+
+    <!-- RUNS -->
+    <section id="runs" class="tab">
+      <div class="row"><button id="r-refresh">Reload runs</button></div>
+      <p class="hint">Recent graph runs (logged by <code>tools/run_log.py</code> at the end of a run).</p>
+      <div id="runs-out"></div>
+    </section>
+  </main>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>

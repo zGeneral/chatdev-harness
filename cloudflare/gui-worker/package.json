@@ -1,0 +1,17 @@
+{
+  "name": "chatdev-gui",
+  "private": true,
+  "version": "0.1.0",
+  "description": "GUI for the ChatDev harness — lessons/notebooks inspector, graph viewer/editor, run dashboard.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.83.0"
+  }
+}

@@ -151,6 +151,13 @@ material (books) in personal-rag; let the factory's self-generated lessons live 
 Not ported from 2.0 (deliberate): the Vue **visual graph editor** (Claude Code's native UI replaces it)
 and **multi-provider** models (Claude subscription only).
 
+## Console (GUI)
+`cloudflare/gui-worker/` is a Cloudflare app (Worker + static SPA) to browse/edit graphs (rendered
+diagram), inspect & **curate the lessons memory** (`lessons:*`), browse personal-rag notebooks, and
+view a run dashboard. Auth-gated by `GUI_TOKEN`; reaches `chatdev-memory` + `personal-rag-mcp` via
+**service bindings** (Worker→Worker, tokens server-side). Runs are logged by `tools/run_log.py` (the
+engine calls it best-effort at the end of every graph). Deploy/secrets: `cloudflare/gui-worker/README.md`.
+
 ## Working in this repo (isolation rules)
 - All writes stay inside this repo. **Never modify `/Users/hassiba/git/chatdev`** (read-only reference).
 - The built app goes in `./demo`, kept separate from harness config (`.claude/`, `CLAUDE.md`).

@@ -97,6 +97,14 @@ memory + image features. Node/edge reference: `CLAUDE.md` → "Declarative graph
 > multi-provider models (Claude subscription only) — and its Vue editor is being replaced by the
 > Cloudflare GUI in [`cloudflare/gui-worker/`](cloudflare/gui-worker/).
 
+## Console (GUI)
+
+A small Cloudflare app — [`cloudflare/gui-worker/`](cloudflare/gui-worker/) — to **browse/edit graphs**
+(with a rendered node/edge diagram), **inspect & curate the lessons memory**, **browse personal-rag
+notebooks**, and watch a **run dashboard**. Self-contained (no external CDNs; YAML parsed server-side),
+auth-gated (`GUI_TOKEN`), with upstream tokens held server-side via service bindings. Deploy:
+`cd cloudflare/gui-worker && npm install && wrangler deploy` (see its README).
+
 ## Repo layout
 
 | Path | What |

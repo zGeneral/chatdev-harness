@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "chatdev-gui",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-20",
+  "observability": { "enabled": true },
+
+  // Static SPA (public/) is served for non-/api paths; the Worker handles /api/*.
+  "assets": { "directory": "./public", "not_found_handling": "single-page-application" },
+
+  // Run-dashboard store.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "chatdev-gui", "database_id": "baf23c57-bfe4-4dc0-83a2-3e8e1e958de9" }
+  ],
+
+  // Service bindings — Worker→Worker direct (avoids same-account public-fetch error 1042).
+  "services": [
+    { "binding": "MEMORY", "service": "chatdev-memory" },
+    { "binding": "RAG", "service": "personal-rag-mcp" }
+  ]
+
+  // Secrets (wrangler secret put — never committed):
+  //   GUI_TOKEN     app password (browser sends it; run_log.py uses it)
+  //   MEMORY_URL / MEMORY_TOKEN     -> chatdev-memory Worker (lessons)
+  //   RAG_API_URL / RAG_API_TOKEN   -> personal-rag Worker (notebooks)
+}
