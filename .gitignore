@@ -27,3 +27,6 @@ cloudflare/**/node_modules/
 # oracleforge stage-graph build artifacts (throwaway)
 oracleprobe/
 *_build/
+
+# autonomous factory output (the produced game; regenerable)
+game_out/
