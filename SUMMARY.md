@@ -16,9 +16,13 @@ emitting code as text that a regex layer scrapes into files.
 | `reviewer` | `Read, Glob, Grep` | **Genuinely read-only.** Reviews vs. spec; returns prioritized findings; never edits. |
 | `tester` | `Read, Bash` | Independently runs `pytest`; reports authoritative pass/fail. Cannot edit → cannot fake green. |
 
-**Orchestration → a Workflow** (`.claude/workflows/chatdev-company.js`): a deterministic
-pipeline reimplementing ChatDev's chat-chain, with its `ComposedPhase`/`break_cycle` loops made
-explicit:
+> Note: this summary records the original build. The harness has since consolidated onto a single
+> **declarative graph engine** — see `README.md` / `CLAUDE.md` for the current model. The original
+> company pipeline now lives as `graphs/software_company.yaml`.
+
+**Orchestration → a declarative graph engine** (`.claude/workflows/chatdev-graph.js`) that runs
+`graphs/*.yaml`. The standard build graph reimplements ChatDev's chat-chain, with its
+`ComposedPhase`/`break_cycle` loops as explicit nodes/edges:
 1. **Spec** — spec-architect → structured build spec.
 2. **Build (TDD)** — programmer writes failing tests, implements, iterates `pytest` to green.
 3. **Review → Fix** (≤2 cycles) — reviewer findings → programmer applies high/medium ones → re-test. Breaks when no actionable findings.
@@ -28,8 +32,8 @@ Each stage is a real subagent dispatch returning a **schema-validated result**; 
 is the shared state** (ChatDev's `ChatEnv` blackboard → real files on disk).
 
 **Charter → `CLAUDE.md`**: roles + tool scoping, phase order, handoff conventions, stop signals,
-how to run. **Driver → `/build-company`** convenience command. **Mapping → `CHATDEV_UNDERSTANDING.md`**
-(full concept→harness table). **Design rationale → `BUILD_PLAN.md`**.
+how to run. **Launcher → `/run-graph graphs/<name>.yaml`**. **Mapping → `CHATDEV_UNDERSTANDING.md`**
+(full concept→harness table). **Design rationale → `docs/build-history/BUILD_PLAN.md`**.
 
 ## Proof (independently verified)
 - The company built the demo target — a Python todo CLI in **`./demo`** (`todo` package:
@@ -42,35 +46,30 @@ how to run. **Driver → `/build-company`** convenience command. **Mapping → `
   (probe-confirmed it resolves); the runtime does **not** resolve project agent types or workflow
   names mid-session (both probed) — hence inline briefs + `scriptPath` invocation.
 
-## How to run the company
+## How to run
 ```
-Workflow({
-  scriptPath: ".claude/workflows/chatdev-company.js",
-  args: { prompt: "<your product spec>", target: "./demo" }
-})
+/run-graph graphs/software_company.yaml     # or any graph in graphs/
 ```
-Or `/build-company <product prompt>`. With **no args** it rebuilds the demo todo CLI in `./demo`.
-
-**Prerequisite (pytest):** the workflow runs tests with a repo-local venv:
-`python3 -m venv .venv && .venv/bin/pip install pytest` (gitignored). Override with `args.pybin`.
+**Prerequisite (once):** `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`.
 
 ## How to widen it
-- **New product:** pass `args.prompt` (the product spec) and `args.target` (a fresh dir). The same
-  spec→build→review→test pipeline applies to any small Python+pytest project.
-- **Bigger scope:** raise the Review/Test cycle caps in the workflow; add roles (e.g. a docs/manual
-  stage) as new `.claude/agents/*.md` + a pipeline stage; swap the test command (`PYTEST`) for other
-  stacks (e.g. `npm test`) by editing the workflow's `PYTEST`/briefs.
-- **Stronger verification:** the orchestrator's independent test run is the real green signal — keep it.
+- **New pipeline / idea:** clone a graph in `graphs/` and edit its first (brief/spec) node, or author
+  a new graph (node/edge reference in `CLAUDE.md` → "Declarative graph engine"); run it with `/run-graph`.
+- **Self-improving builds:** use `graphs/game_factory_learning.yaml` — it recalls past lessons and stores
+  new verified ones; `graphs/consolidate_lessons.yaml` keeps that memory sharp.
+- **Stronger verification:** the independent test run (the green `pytest` signal) is the real success gate.
 
 ## Repo layout
 ```
-.claude/agents/{spec-architect,programmer,reviewer,tester}.md   # the company roles
-.claude/workflows/chatdev-company.js                            # the orchestration pipeline
-.claude/commands/build-company.md                               # /build-company driver
-CLAUDE.md                          # company charter (auto-loaded project instructions)
-CHATDEV_UNDERSTANDING.md           # ChatDev → harness mapping (Phase A)
-BUILD_PLAN.md                      # design + rationale (Phase B)
-PROGRESS.md  SUMMARY.md  HARNESS_DONE.md
-demo/                              # the built todo CLI + pytest suite (proof; green)
-.venv/                             # repo-local pytest (gitignored)
+.claude/workflows/chatdev-graph.js                             # the engine (runs any graph)
+graphs/*.yaml                                                   # the pipelines (one graph each)
+.claude/agents/{spec-architect,programmer,reviewer,tester}.md   # the role subagents
+.claude/commands/run-graph.md                                   # /run-graph launcher
+CLAUDE.md                          # project charter (auto-loaded instructions)
+CHATDEV_UNDERSTANDING.md           # ChatDev → harness mapping
+tools/                             # mem.py, rag_search.py, genimage.py
+cloudflare/                        # memory Worker + GUI app
+docs/build-history/                # PROGRESS, BUILD_PLAN, HARNESS_DONE (original build log)
+demo/, game/, …                    # built artifacts (proof; green)
+.venv/                             # repo-local pytest+deps (gitignored)
 ```

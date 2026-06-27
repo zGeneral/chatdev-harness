@@ -27,10 +27,9 @@ control. Either way the Programmer is the only role that mutates files.
 | Code Reviewer | `reviewer` | `Read, Glob, Grep` (read-only) | Reviews against the spec; returns prioritized findings. **Cannot edit or run code** — the Programmer applies fixes. |
 | Test Engineer | `tester` | `Read, Bash` | Independently runs `pytest`; reports the authoritative pass/fail. **Cannot edit** — so it cannot fake a green. |
 
-## Phase order (the pipeline)
-Reimplements ChatDev's chat-chain as a deterministic **Workflow**
-(`.claude/workflows/chatdev-company.js`), with ChatDev's `ComposedPhase`/`break_cycle` loops
-made explicit:
+## Phase order (the standard build graph)
+A build graph (e.g. `graphs/software_company.yaml`) is ChatDev's chat-chain expressed as explicit
+graph nodes/edges, with its `ComposedPhase`/`break_cycle` loops made explicit:
 
 1. **Spec** — `spec-architect` turns the product prompt into the build spec.
 2. **Build (TDD)** — `programmer` writes the failing tests, then the implementation, and
@@ -54,53 +53,35 @@ made explicit:
   the blocker rather than looping. The Build/Test loops have hard cycle caps for the same reason.
 - The Reviewer returning zero high-or-medium-severity findings ends the Review loop early (ChatDev's `<INFO> Finished`).
 
-## How to run the company
-Dispatch the Workflow with a product prompt and a target dir. Use the **`scriptPath`** form —
-it always works; the `name: "chatdev-company"` form only resolves if your Claude Code version
-discovers project `.claude/workflows/` at startup (built-ins always do):
-
+## How to run (one model)
+There is a single way to run a pipeline: feed a graph to the engine.
 ```
-Workflow({
-  scriptPath: ".claude/workflows/chatdev-company.js",
-  args: { prompt: "<your product spec>", target: "./demo" }
-})
+/run-graph graphs/<name>.yaml
 ```
+(The `/run-graph` command converts the YAML → JSON and invokes the engine
+`.claude/workflows/chatdev-graph.js` with it.) **Prerequisite (once):**
+`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`. Graphs run tests with
+`.venv/bin/python` (override per-graph via the `PYBIN`/`pybin` references in the graph).
 
-With no args it builds the **demo target**: a Python todo CLI in `./demo`
-(`add <text>` / `list` / `done <id>`, JSON-persisted, with a `pytest` suite). The slice is
-green when `pytest` in `./demo` exits 0. Widen the company by changing `args.prompt`/`args.target`.
+You can also run a single role interactively via the Agent tool (e.g. dispatch `reviewer` on the
+current diff). The read-only reviewer is the built-in `feature-dev:code-reviewer` (genuinely no
+Write/Edit/Bash); the `.claude/agents/*.md` files are the canonical tool-scoped role definitions.
 
-**Prerequisite — pytest:** the workflow runs tests with a repo-local venv python
-(`.venv/bin/python`, gitignored). Create it once:
-`python3 -m venv .venv && .venv/bin/pip install pytest`. To use a different interpreter that
-already has pytest, pass `args.pybin: "/path/to/python"`.
+## Graph library (`graphs/*.yaml`)
+Every pipeline is a graph. ChatDev's old presets are now just graphs:
 
-You can also run a single role interactively via the Agent tool (e.g. dispatch `reviewer`
-on the current diff) — the `.claude/agents/*.md` definitions are the canonical, tool-scoped
-roles. (Note: the Workflow runtime resolves agent types from the built-in/plugin registry
-only — it does **not** pick up project `.claude/agents` — so the workflow embeds equivalent
-role briefs inline. For the critical read-only role it dispatches the built-in
-`feature-dev:code-reviewer` (genuinely no Write/Edit/Bash) so the reviewer is enforced
-read-only in the workflow too; the `.claude/agents` files remain the source of truth and
-enforce the scoping for interactive use.)
+| Graph | What it is |
+|---|---|
+| `software_company.yaml` | The ChatDev "company": spec → build(TDD) → review → test. |
+| `game_factory.yaml` | A real Pygame game (pygame-free tested logic + headless smoke). |
+| `game_factory_learning.yaml` | **Self-improving** game build (recall books + lessons → … → reflect stores verified lessons). |
+| `data_viz.yaml` · `art.yaml` | A matplotlib chart (real PNG) · a Gemini image via `tools/genimage.py`. |
+| `memory_demo.yaml` · `consolidate_lessons.yaml` | Retrieve-and-apply demo · lessons maintenance (dedupe/merge). |
+| `demo_build.yaml` | Minimal example (spec → build → review → report). |
+| `tandem.yaml` *(tandem branch)* | The Tandem puzzle, grounded by the game-design books. |
 
-## Presets / modes (ChatDev CompanyConfig)
-ChatDev ships pipeline presets in `CompanyConfig/` (Default, Human, Incremental, Art). This harness
-implements them as **modes of the one engine**, not separate companies:
-
-| Preset | Here | How to run |
-|---|---|---|
-| **Default** | The autonomous pipeline (spec → build → review → test). | `/build-company` or the Workflow with no mode flag. |
-| **Incremental** (`incremental_develop`) | Extend an EXISTING tested codebase instead of scaffolding from scratch; new + existing tests must stay green. | `/extend-company <change>` or `args: { incremental: true, change: "...", target: <existing dir> }`. |
-| **Human** (`HumanAgentInteraction`) | After the automated review, a **human** reviews and gives feedback (≤5 rounds) before the test gate. Runs as an interactive, main-agent-driven flow (a background Workflow can't pause for human turns) using the role agents + `AskUserQuestion`. | `/build-company-human [prompt]`. |
-| **GameDev** (2.0 `GameDev_with_manager.yaml`) | Game factory: GDD → core (Phase 1) → polish (Phase 2) → QA → run. Builds a real **Pygame** game; success = pure-logic `pytest` green **and** a headless smoke-run launches clean. Separate workflow `chatdev-gamedev.js`. | `/build-game [idea]`. |
-| **Art** | Not yet ported — would wire an image-gen step (the `nanobanana` skill) to produce GUI assets. | — |
-
-Note on ChatDev's two generations: the **1.0** `CompanyConfig/` presets are general (its famous games
-like 2048/Gomoku were Default-pipeline *outputs*, not a preset). But **2.0** (the repo's current branch)
-has a `yaml_instance/` directory of ~40 YAML-graph workflows, including a dedicated **GameDev** one
-(ported here) plus others (data-viz, Blender 3D, deep-research, video) that would need capabilities
-beyond Python+pytest. Games here keep *logic* in a pygame-free module so it stays testable.
+To build a new idea: clone a graph and edit its first (brief/spec) node, or author one with the GUI
+graph editor. Each graph's task is currently baked into that first node.
 
 ## Declarative graph engine (ChatDev 2.0 port)
 ChatDev 2.0 is a **declarative graph runtime** — you author a YAML `graph: {nodes, edges}` and an

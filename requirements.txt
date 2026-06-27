@@ -3,4 +3,4 @@
 pytest>=8           # the success signal for company/graph builds
 pyyaml>=6           # YAML->JSON bridge for the declarative graph engine (/run-graph)
 matplotlib>=3.8     # data-visualization graph (graphs/data_viz.yaml)
-pygame-ce>=2.5      # game factory (graphs/game_factory.yaml, chatdev-gamedev)
+pygame-ce>=2.5      # game factory (graphs/game_factory.yaml, game_factory_learning.yaml)

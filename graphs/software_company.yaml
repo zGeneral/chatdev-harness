@@ -1,5 +1,5 @@
 # The ChatDev software company (spec -> build -> review -> test) re-expressed AS a declarative
-# graph on the engine — proving the engine subsumes the hand-written chatdev-company workflow.
+# graph on the engine — the ChatDev "company" pipeline expressed declaratively.
 # build/fix is a bounded loop via loop_counter; the reviewer is a genuinely read-only agent node.
 graph:
   id: software_company

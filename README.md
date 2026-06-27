@@ -36,13 +36,18 @@ gates work with just step 1.
 
 ## How it works
 
-Four tool-scoped role subagents (`.claude/agents/`), orchestrated by a deterministic
-[Workflow](.claude/workflows/chatdev-company.js) that reimplements ChatDev's chat-chain as an
-explicit pipeline:
+The harness is a **declarative graph engine** (a Claude-Code-native port of ChatDev 2.0). A pipeline is a
+**graph** — a YAML file in [`graphs/`](graphs/) of **nodes** (steps) + **edges** (how they connect); the
+engine [`.claude/workflows/chatdev-graph.js`](.claude/workflows/chatdev-graph.js) runs it by dispatching a
+**real Claude Code subagent** at each agent node, so steps write files, run commands, and pass a real
+`pytest` suite. A typical build graph:
 
 ```
-Spec ─▶ Build (TDD) ─▶ Review → Fix (≤2) ─▶ Test → Debug (≤3) ─▶ green (pytest exit 0)
+spec ─▶ agent(build, TDD) ─▶ [PASS] review ─▶ test ─▶ green (pytest exit 0)
+                   └─[FAIL]─▶ loop_counter ─▶ build
 ```
+
+Roles are tool-scoped subagents (separation of duties is **enforced**, not just prompted):
 
 | Role | Tools | Responsibility |
 |---|---|---|
@@ -57,64 +62,54 @@ real files on disk); stages hand off **schema-validated results**.
 
 ## Run it
 
-```jsonc
-// In Claude Code:
-Workflow({
-  scriptPath: ".claude/workflows/chatdev-company.js",
-  args: { prompt: "<your product spec>", target: "./demo" }
-})
-```
-
-Or use the `/build-company` command. With **no args** it builds the demo target: a Python todo
-CLI in [`demo/`](demo/) (`add` / `list` / `done`, JSON-persisted) with a `pytest` suite — proven
-green (10/10, exit 0).
-
-**Prerequisite (pytest):** `python3 -m venv .venv && .venv/bin/pip install pytest` (override the
-interpreter with `args.pybin`).
-
-## Presets / modes
-
-ChatDev's pipeline presets (`CompanyConfig/`) are implemented here as **modes of one engine**:
-
-| Preset | What it does | Run |
-|---|---|---|
-| **Default** | Autonomous spec → build → review → test. | `/build-company "<idea>"` |
-| **Incremental** | Extend an **existing** tested codebase (new + existing tests stay green). | `/extend-company "<change>"` |
-| **Human** | A **human** reviews and gives feedback (≤5 rounds) before the test gate; interactive. | `/build-company-human "<idea>"` |
-| **GameDev** | A real **Pygame** game (port of ChatDev 2.0's `GameDev_with_manager.yaml`): GDD → core → polish → QA → run. Success = pure-logic `pytest` green **and** a headless launch runs clean. | `/build-game "<idea>"` |
-| **Art** | _Not yet ported_ — would wire image generation (e.g. nanobanana) for GUI assets. | — |
-
-> ChatDev 1.0's presets are general; its 2.0 branch adds a `yaml_instance/` library of ~40 YAML-graph
-> workflows — including the GameDev one ported here. Others (Blender 3D, Manim video, data-viz,
-> deep-research) need capabilities beyond Python+pytest. Games here keep *logic* in a pygame-free,
-> pytest-tested module; `game.py` is the renderer with a headless smoke mode.
-
-## Declarative graph engine (ChatDev 2.0)
-
-ChatDev 2.0 is a **declarative graph runtime** — author a YAML `graph: {nodes, edges}` and an executor
-runs it. [`.claude/workflows/chatdev-graph.js`](.claude/workflows/chatdev-graph.js) reimplements that
-Claude-Code-native: nodes (`agent`/`literal`/`passthrough`/`loop_counter`/`python`/`subgraph`) and edges
-that route on a node's output (`contains:` / `!contains:` / `regex:` / `equals:` / `default`), executed by
-**real subagents with real tools**.
+There is **one way to run a pipeline** — feed a graph to the engine:
 
 ```bash
-/run-graph graphs/demo_build.yaml          # spec → builder(TDD, real files+pytest) → reviewer → reporter
+# In Claude Code:
+/run-graph graphs/<name>.yaml
 ```
 
-See [`graphs/demo_build.yaml`](graphs/demo_build.yaml) for the shape and `CLAUDE.md` → "Declarative graph
-engine" for the node/edge reference. (Deliberately not ported: the Vue visual editor, multi-provider models,
-and retrieval-memory modules — replaced by Claude Code's UI, the subscription, and the filesystem.)
+**Prerequisite (once):** `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`
+(pytest + pyyaml + matplotlib + pygame-ce). See **Setup & configuration** above for the optional
+memory + image features. Node/edge reference: `CLAUDE.md` → "Declarative graph engine".
+
+**Node types:** `literal` (static text), `agent` (a real subagent — full tools, or read-only via
+`agentType`, or structured output via `schema`), `python`, `passthrough`, `loop_counter` (bound a loop),
+`subgraph`, `memory` (retrieval). **Edges** route on a node's text output: `contains:` / `!contains:` /
+`regex:` / `equals:` / `default`. The **filesystem is the shared state**; `pytest` exit 0 is success.
+
+## Graph library (`graphs/`)
+
+| Graph | What it builds |
+|---|---|
+| `software_company.yaml` | Software: spec → build(TDD) → review → test (the ChatDev "company" as a graph). |
+| `game_factory.yaml` | A real **Pygame** game (pygame-free tested logic + headless smoke). |
+| `game_factory_learning.yaml` | **Self-improving** game build — recalls books + past lessons, stores new lessons on green. |
+| `data_viz.yaml` | A labelled matplotlib chart (real PNG). |
+| `art.yaml` | A generated image via Gemini (`tools/genimage.py`). |
+| `memory_demo.yaml` | Retrieve from memory and apply it. |
+| `consolidate_lessons.yaml` | Maintenance: dedupe/merge the lessons store. |
+| `demo_build.yaml` | Minimal example (spec → build → review → report). |
+| `tandem.yaml` *(on the `tandem` branch)* | The Tandem puzzle, grounded by the game-design books. |
+
+> Each graph currently has its task baked into its first node. To build **your own idea**, clone a graph and
+> edit that node (or use the graph editor in the GUI). Deliberately not reimplemented from ChatDev 2.0:
+> multi-provider models (Claude subscription only) — and its Vue editor is being replaced by the
+> Cloudflare GUI in [`cloudflare/gui-worker/`](cloudflare/gui-worker/).
 
 ## Repo layout
 
 | Path | What |
 |---|---|
-| [`.claude/agents/`](.claude/agents/) | The four company roles (tool-scoped subagents). |
-| [`.claude/workflows/chatdev-company.js`](.claude/workflows/chatdev-company.js) | The orchestration pipeline. |
-| [`.claude/commands/build-company.md`](.claude/commands/build-company.md) | `/build-company` driver. |
-| [`CLAUDE.md`](CLAUDE.md) | Company charter (auto-loaded project instructions). |
+| [`.claude/workflows/chatdev-graph.js`](.claude/workflows/chatdev-graph.js) | **The engine** — runs any graph. |
+| [`graphs/`](graphs/) | **The pipelines** — one YAML graph each. |
+| [`.claude/agents/`](.claude/agents/) | The role subagents (tool-scoped). |
+| [`.claude/commands/run-graph.md`](.claude/commands/run-graph.md) | `/run-graph` launcher. |
+| [`tools/`](tools/) | `mem.py` (lessons), `rag_search.py` (books), `genimage.py` (art). |
+| [`cloudflare/`](cloudflare/) | The memory Worker + the GUI app. |
+| [`CLAUDE.md`](CLAUDE.md) | Project charter (auto-loaded instructions). |
 | [`CHATDEV_UNDERSTANDING.md`](CHATDEV_UNDERSTANDING.md) | Full ChatDev → harness concept mapping. |
-| [`BUILD_PLAN.md`](BUILD_PLAN.md) · [`SUMMARY.md`](SUMMARY.md) | Design rationale · summary. |
+| [`SUMMARY.md`](SUMMARY.md) · [`docs/build-history/`](docs/build-history/) | Summary · original build log. |
 | [`demo/`](demo/) | The built todo CLI + pytest suite (proof artifact). |
 
 ## Credits
