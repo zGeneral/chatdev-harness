@@ -207,11 +207,18 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 4 SHELL & RETENTION. REAL tools, cwd = repo root. Per out/factory/SPEC.md, build the playable PWA
-          shell: out/factory/index.html + out/factory/app.js (a flat-screen router, selection screen, DAILY [UTC
-          date->seed->same level, no backend], ENDLESS, and a HINT LADDER orient->eliminate->move->step-through
-          driven by the solver). Add out/factory/shell.test.js (node --test, logic only — no browser): Daily seed
-          -> identical level (determinism), a grace-streak rule, and hint eureka-integrity. Then audit for DARK
+          STAGE 4 SHELL & RETENTION. REAL tools, cwd = repo root. FIRST Read graphs/oracleforge/design/game-ui.md
+          (UI/feel grounding) and write out/factory/DESIGN.md freezing THIS game's UI constraints per §5 (palette
+          token values, font, readability rules, juice budget = trust vs delight, explicit do/don'ts). Then, per
+          out/factory/SPEC.md + DESIGN.md, build the playable PWA shell: out/factory/index.html + out/factory/app.js
+          (flat-screen router, selection screen, DAILY [UTC date->seed->same level, no backend], ENDLESS, and a HINT
+          LADDER orient->eliminate->move->step-through driven by the solver), PLUS a design-tokens stylesheet (CSS
+          custom properties per §2) — state by shape+ARIA not color alone, a prefers-reduced-motion block, a
+          :focus-visible style, and restrained game-feel (§3). Add out/factory/shell.test.js (node --test, logic/DOM
+          -string only — no browser): Daily seed -> identical level (determinism), a grace-streak rule, hint
+          eureka-integrity, AND the §6 TESTABLE UI CONTRACT (tokens stylesheet referenced + no raw hex in app.js;
+          interactive cells carry role+aria-label+aria-pressed and a non-color data-state/glyph; a
+          prefers-reduced-motion block exists; a focus-visible style exists; DESIGN.md exists). Then audit for DARK
           PATTERNS (graphs/oracleforge/vendor/agents/ethics-auditor.md) and record out/factory/ETHICS.md (zero
           unmitigated). On a FAIL retry, fix. End "SHELL: BUILT".
 
@@ -221,8 +228,9 @@ graph:
         effort: low
         role: |
           INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
-          2>&1; echo "NODE_EXIT=$?". Also confirm out/factory/ETHICS.md exists and records no UNMITIGATED dark
-          pattern. End with EXACTLY "SHELL: PASS" if NODE_EXIT=0 AND ethics clean, else "SHELL: FAIL" + reason.
+          2>&1; echo "NODE_EXIT=$?". Also confirm out/factory/DESIGN.md and out/factory/ETHICS.md exist and ETHICS
+          records no UNMITIGATED dark pattern. (node --test covers the §6 UI-contract assertions.) End with EXACTLY
+          "SHELL: PASS" if NODE_EXIT=0 AND DESIGN.md present AND ethics clean, else "SHELL: FAIL" + reason.
 
     - id: shl_gate
       type: loop_counter

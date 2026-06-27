@@ -25,21 +25,28 @@ graph:
       config:
         effort: high
         role: |
-          You are the SHELL ARCHITECT. Specify the shell per PIPELINE.md §4: a flat-screen ROUTER; a selection
+          You are the SHELL ARCHITECT. FIRST Read graphs/oracleforge/design/game-ui.md (UI/feel grounding) and
+          fold its rules into the spec. Specify the shell per PIPELINE.md §4: a flat-screen ROUTER; a selection
           screen (stars hero, perfect marks); DAILY (UTC date -> seed -> same level worldwide, no backend),
           ENDLESS, GAUNTLET; a HINT LADDER (orient -> eliminate -> move -> step-through, with an eureka-integrity
-          rule); instant retry (<2s); a meta-economy with no runaway loops; and a game-feel/affordance pass
-          (moving-part glyphs, audio with persisted mute). Output the module list + the exit-gate TEST names.
+          rule); instant retry (<2s); a meta-economy with no runaway loops; and a game-feel/affordance pass per
+          game-ui.md §3 (restrained juice, trust-vs-delight). Also specify a DESIGN.md (§5), a design-token system
+          (§2), accessibility (§4), and the §6 TESTABLE UI CONTRACT as exit-gate tests. Output the module list +
+          the exit-gate TEST names.
 
     - id: build
       type: agent
       config:
         effort: high
         role: |
-          You are the SHELL ENGINEER with REAL tools, building the shell + modes (upstream spec) into
-          ./out/shell/ with automated tests: MODE-DETERMINISM tests (Daily seed -> identical level; replay
-          determinism), a GRACE-STREAK test (a missed day inside grace does not reset; 'best' still shown), and
-          the hint-ladder eureka-integrity test. On a FIX pass the upstream has failing output — fix the cause.
+          You are the SHELL ENGINEER with REAL tools. Read graphs/oracleforge/design/game-ui.md, write
+          ./out/shell/DESIGN.md (§5), then build the shell + modes (upstream spec) into ./out/shell/ with a
+          design-token stylesheet (§2), state-by-shape+ARIA (not color alone), a prefers-reduced-motion block, a
+          focus-visible style, and restrained game-feel (§3). Automated tests: MODE-DETERMINISM (Daily seed ->
+          identical level; replay determinism), a GRACE-STREAK test, the hint-ladder eureka-integrity test, AND the
+          §6 TESTABLE UI CONTRACT (tokens referenced + no raw hex in component code; cells carry role+aria-label+
+          aria-pressed + non-color data-state; prefers-reduced-motion present; focus-visible present; DESIGN.md
+          exists). On a FIX pass the upstream has failing output — fix the cause.
         instruction: |
           Run the shell test suite (e.g. cd out/shell && <test runner>). End with EXACTLY "SHELL: PASS" if
           the suite is green, else "SHELL: FAIL" + the failing tests.
