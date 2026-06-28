@@ -18,6 +18,14 @@ always gated behind `prefers-reduced-motion`.
 - **One focal action.** The board is the hero; chrome (score, mode, hint) is quiet and peripheral.
 - **State by SHAPE + POSITION + TEXT, never color alone.** A lit vs unlit cell must differ by more than
   hue (fill pattern, glyph, border, or an explicit label/`data-state`) — colorblind-safe by construction.
+- **Meaningful representation, never raw internals.** Show targets/state in their MEANINGFUL player-facing
+  form — a color swatch, an icon, a word — NEVER a bare engine index or enum number. Printing an internal
+  value (a palette index like `/0`, a state id) "draws the data structure" instead of the game: it reads as
+  technically-compliant slop and fails comprehension even though it's text. The encoding must mean something
+  to a human, not just to the engine.
+- **Teach the mechanic visually.** A first-time player must learn the CORE mechanic from the screen — ship a
+  legend / principles panel / first-run tutorial that explains *how it works*, not just the controls. The
+  goal and the primary action are identifiable on the first frame.
 - **High contrast.** Foreground/background ≥ WCAG AA (4.5:1 text, 3:1 UI). Threats/targets read instantly.
 - **Telegraph every state change.** A tap's effect is shown, not just applied (a brief highlight on the
   toggled cells); the win is unmistakable.
@@ -59,6 +67,12 @@ Before building the shell, write `DESIGN.md` into the game dir freezing THIS gam
 palette (the chosen token values), font, the readability rules, the juice budget (trust vs delight),
 and explicit do/don'ts (e.g. "high-contrast borders; state via glyph+label not color; no generic CSS
 drop-shadows; all motion behind reduced-motion"). Then build to it — same discipline as the frozen SPEC.
+**Visual identity — not a wireframe.** DESIGN.md must commit to an *aesthetic*: a theme, a palette chosen
+with intent, and real typography — not the default engineer's-data-structure look (bare gray cells,
+unstyled defaults). With labels hidden the build should still read as *a specific game*. A
+characterless-but-functional UI is a feel/identity failure, not a pass. Optional north-star: if a concept
+reference exists (`out/factory/DESIGN_REF.*`, or an idea-spec `art:`/`look:` field), honor it as the visual
+target; absent → choose a deliberate direction anyway.
 
 ## 6. Testable UI contract (what the shell gate checks — keep the harness honest)
 A separate verifier asserts the *mechanical* parts (visual juice stays prompt-guided, not claimed as

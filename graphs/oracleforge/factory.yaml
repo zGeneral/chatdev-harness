@@ -1,12 +1,12 @@
 # oracleforge GAME FACTORY — autonomous idea → production, end-to-end, in ONE engine run.
 # Input (args.input): a game idea (free text) OR a path to an IDEA spec.
-# Output: a shippable web game in ./out/factory/ that passed EVERY stage gate (real tests run + are
+# Output: a shippable web game in ./{{OUT}}/ that passed EVERY stage gate (real tests run + are
 # re-checked by an INDEPENDENT verifier — a stage cannot self-certify a fake green).
 #
 # Design (hardened by an adversarial review):
-#  - ONE coherent JS/web game in ./out/factory/ (oracleforge's real target; its templates are JS). Canonical
-#    layout pinned in out/factory/SPEC.md by `synthesize` so every stage reads/writes the SAME paths.
-#    Everything is ESM (out/factory/package.json {"type":"module"}); the gate is `cd out/factory && node --test`.
+#  - ONE coherent JS/web game in ./{{OUT}}/ (oracleforge's real target; its templates are JS). Canonical
+#    layout pinned in {{OUT}}/SPEC.md by `synthesize` so every stage reads/writes the SAME paths.
+#    Everything is ESM ({{OUT}}/package.json {"type":"module"}); the gate is `cd {{OUT}} && node --test`.
 #  - Each stage = build -> INDEPENDENT verify (re-runs node --test; emits the gate marker from the REAL
 #    exit code; never edits) -> bounded retry. Markers are anchored to their own line (regex), so a stage
 #    that merely MENTIONS a marker in prose can't mis-route (a real bug this review caught).
@@ -15,7 +15,7 @@
 #  - ship smoke = IN-PROCESS handler tests (no long-lived server to hang an unattended run).
 #  - Stage 7 (beta loop) needs real players — see graphs/oracleforge/rebalance.yaml.
 # Roles + templates are vendored under graphs/oracleforge/vendor/. Paths are relative to the repo root
-# (the agents' cwd); steps that cd capture ROOT=$PWD first. Artifacts: ./out/factory/ (gitignored).
+# (the agents' cwd); steps that cd capture ROOT=$PWD first. Artifacts: ./{{OUT}}/ (gitignored).
 #
 # Run:  /run-graph graphs/oracleforge/factory.yaml   with args.input = "<your game idea>"
 graph:
@@ -28,8 +28,8 @@ graph:
         effort: low
         role: |
           You bootstrap an autonomous game build. The input is a game IDEA (free text) or a path to an IDEA
-          spec (Read it if a path). Bash: mkdir -p out/factory . Use the Write tool to save the idea to
-          out/factory/IDEA.md. Output the idea text UNCHANGED (this seeds the oracle-fit council).
+          spec (Read it if a path). Bash: mkdir -p {{OUT}} . Use the Write tool to save the idea to
+          {{OUT}}/IDEA.md. Output the idea text UNCHANGED (this seeds the oracle-fit council).
 
     - id: recall
       type: agent
@@ -74,25 +74,55 @@ graph:
           a node budget at shipped scale. Begin with EXACTLY one line: "VERDICT: fit" / "VERDICT: redesign" /
           "VERDICT: unfit". Then BREAKS and SURVIVABLE-WITH. Independent.
 
+    - id: critic_human
+      type: agent
+      config:
+        effort: medium
+        role: |
+          First Read graphs/oracleforge/design/human-fit.md. Then hostilely review the idea (upstream) on
+          HUMAN-COGNITION FIT — is it FUN and GRASPABLE for a person, not merely exactly-solvable by a
+          machine? Apply the four checks: (1) INTUITIVE SUBSTRATE — the core operation rests on intuition a
+          player already has (physics / space / adjacency / counting / containment / real subtractive
+          colour-mixing / everyday metaphor), NOT recalling an arbitrary lookup table or non-obvious
+          mapping; a theme that implies an intuition the rule then violates is WORSE than none. (2) BOUNDED
+          WORKING MEMORY — choosing a move never requires the player to track a long order/permutation
+          (>~4 elements) or simulate the whole consequence chain in their head; the information to decide is
+          VISIBLE on the board, not carried in the head. (3) LEGIBLE STATE & MOVE — a glance reads the
+          state, the goal, and what a candidate move does. (4) LEARNABLE FAST + FUN EARLY — grasped in
+          ~30s, a real satisfying choice by move 2–3, INCLUDING at the smallest size. Calibrate against the
+          PARKED anti-example Bleedweave (machine-fit, human-unfit — arbitrary non-commutative table +
+          in-head topo-sort). Begin with EXACTLY one line: "VERDICT: human-fit" / "VERDICT: redesign" /
+          "VERDICT: human-unfit". Then the specific BREAKS (which check, why) and SURVIVABLE-WITH
+          redesigns (intuitive substrate / always-visible state / smaller decision unit / easy on-ramp).
+          Independent.
+
     - id: synthesize
       join: true
       type: agent
       config:
         effort: high
         role: |
-          You are the SYNTHESIZER (see graphs/oracleforge/vendor/agents/synthesizer.md). Upstream holds THREE
-          independent critic verdicts (each starts "VERDICT:"). If >=2 say "unfit" -> NO-GO. Otherwise adopt
-          the survivable redesigns and FREEZE the design. Use the Write tool to write out/factory/SPEC.md with:
+          You are the SYNTHESIZER (see graphs/oracleforge/vendor/agents/synthesizer.md). Upstream holds FOUR
+          independent verdicts (each starts "VERDICT:"): three ORACLE-FIT critics (determinism /
+          search-completeness / tractability) and one HUMAN-COGNITION-FIT critic (graphs/oracleforge/design/
+          human-fit.md). NO-GO if the human-fit critic says "human-unfit" — a machine-fit but human-unfit
+          idea is PARKED, not built (see graphs/oracleforge/examples/bleedweave-postmortem.md) — OR if >=2
+          oracle critics say "unfit". Otherwise ADOPT every survivable redesign, INCLUDING the human
+          critic's (an intuitive substrate over any arbitrary-table recall; always-visible state to relieve
+          working memory; a smaller per-move decision unit), and FREEZE the design. Use the Write tool to
+          write {{OUT}}/SPEC.md with:
           front-matter INCLUDING a "soul:" field — THE SOUL is the single signature deduction/technique the
           puzzle is built around (it will later be ablation-tested to prove it is load-bearing, not decorative);
           Frozen rules (axioms); Oracle sketch (state / move set / win predicate / pruning);
-          Golden trace; Content dimensions; Difficulty seed; and an "IMPLEMENTATION CONTRACT" section that
+          Golden trace; Content dimensions; Difficulty seed (MUST include a genuine EASY on-ramp / teaching
+          band that is fun and graspable at the smallest size — not only medium–hard levels); and an
+          "IMPLEMENTATION CONTRACT" section that
           pins the canonical layout EVERY later stage must follow:
-            * Language: JavaScript ESM. out/factory/package.json = {"type":"module"}.
-            * Engine+solver: out/factory/engine.js (deterministic simulate/evaluate + exact BFS/IDDFS solver
-              solveWithStats + countSolutions); census: out/factory/census.js.
-            * ALL tests are node --test files named out/factory/*.test.js. The canonical gate is, from repo root:
-              ROOT="$PWD"; cd out/factory && node --test  (exit 0 = green).
+            * Language: JavaScript ESM. {{OUT}}/package.json = {"type":"module"}.
+            * Engine+solver: {{OUT}}/engine.js (deterministic simulate/evaluate + exact BFS/IDDFS solver
+              solveWithStats + countSolutions); census: {{OUT}}/census.js.
+            * ALL tests are node --test files named {{OUT}}/*.test.js. The canonical gate is, from repo root:
+              ROOT="$PWD"; cd {{OUT}} && node --test  (exit 0 = green).
             * Later stages ADD modules (contract.js, baker.js, pack.json, codec.js, shell: index.html/app.js/
               sw.js, worker.js) and ADD *.test.js — never rename engine.js or move tests.
           Output: a FIRST line EXACTLY "COUNCIL: GO" or "COUNCIL: NO-GO"; then a one-paragraph summary.
@@ -103,13 +133,13 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 0 ORACLE. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:oracle --top-k 4 --query "deterministic engine / exact solver / yield-census pitfalls" . Read out/factory/SPEC.md and follow its IMPLEMENTATION
+          STAGE 0 ORACLE. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:oracle --top-k 4 --query "deterministic engine / exact solver / yield-census pitfalls" . Read {{OUT}}/SPEC.md and follow its IMPLEMENTATION
           CONTRACT exactly. Patterns: graphs/oracleforge/vendor/templates/solver/solver.js and
-          .../engine/simulation.js. Write: out/factory/package.json ({"type":"module"}); out/factory/engine.js
+          .../engine/simulation.js. Write: {{OUT}}/package.json ({"type":"module"}); {{OUT}}/engine.js
           (deterministic engine honoring the SPEC golden trace + exact solver returning min length AND
-          solution count); out/factory/census.js (SEEDED rng, >=300 small boards, prints solvable %, unique-
+          solution count); {{OUT}}/census.js (SEEDED rng, >=300 small boards, prints solvable %, unique-
           optimal %, straight-aim regret %, node-budget overflow; prints "CENSUS: HEALTHY" iff non-degenerate);
-          out/factory/engine.test.js (node --test: golden trace + a stall/edge case + a win-predicate case).
+          {{OUT}}/engine.test.js (node --test: golden trace + a stall/edge case + a win-predicate case).
           On a FAIL retry the upstream has the failing output — fix the cause. End with "ORACLE: BUILT".
 
     - id: oracle_verify
@@ -118,8 +148,8 @@ graph:
         effort: medium
         role: |
           INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY (cwd = repo root):
-            ROOT="$PWD"; cd out/factory && node --test 2>&1; echo "NODE_EXIT=$?"
-            ROOT="$PWD"; cd out/factory && node census.js 2>&1 | tail -20
+            ROOT="$PWD"; cd {{OUT}} && node --test 2>&1; echo "NODE_EXIT=$?"
+            ROOT="$PWD"; cd {{OUT}} && node census.js 2>&1 | tail -20
           If NODE_EXIT=0 AND the census output contains "CENSUS: HEALTHY", end with EXACTLY a final line
           "ORACLE: PASS". Otherwise end with "ORACLE: FAIL" + the failing tests / census reason.
 
@@ -133,8 +163,8 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 1 FOUNDATION. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:foundation --top-k 4 --query "determinism / solver-engine equivalence / purity pitfalls" . Per out/factory/SPEC.md, harden the engine into the
-          permanent core and ADD out/factory/foundation.test.js (node --test): a SOLVER<->ENGINE EQUIVALENCE
+          STAGE 1 FOUNDATION. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:foundation --top-k 4 --query "determinism / solver-engine equivalence / purity pitfalls" . Per {{OUT}}/SPEC.md, harden the engine into the
+          permanent core and ADD {{OUT}}/foundation.test.js (node --test): a SOLVER<->ENGINE EQUIVALENCE
           test (the solver's solution actually wins under the engine), a PURITY test (no shared mutable state /
           wall-clock / RNG in a tick), and a TWIN-RUN determinism test (same input -> identical frames). Do
           NOT rename engine.js or move tests. On a FAIL retry, read the failing output and fix. End "FOUNDATION: BUILT".
@@ -144,7 +174,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd {{OUT}} && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "FOUNDATION: PASS" if NODE_EXIT=0, else "FOUNDATION: FAIL"
           + the failing tests.
 
@@ -158,10 +188,10 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 2 DIFFICULTY CONTRACT. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:difficulty --top-k 4 --query "anti-greedy / uniqueness / technique-tier contract pitfalls" . Per out/factory/SPEC.md, add out/factory/
+          STAGE 2 DIFFICULTY CONTRACT. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:difficulty --top-k 4 --query "anti-greedy / uniqueness / technique-tier contract pitfalls" . Per {{OUT}}/SPEC.md, add {{OUT}}/
           contract.js: 6-10 computable gates over (level, solution, frames) — default-outcome, structural
           minimums, ANTI-GREEDY (the obvious line must not win), UNIQUENESS, a technique-tier ladder, sequence
-          shape, failure legibility. Add out/factory/contract.test.js with a STARTER band (passes all gates) and
+          shape, failure legibility. Add {{OUT}}/contract.test.js with a STARTER band (passes all gates) and
           SOFT fixtures (each must be REJECTED by the gate it targets). On a FAIL retry, fix the cause. End
           "CONTRACT: BUILT".
 
@@ -170,7 +200,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd {{OUT}} && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "CONTRACT: PASS" if NODE_EXIT=0 (starter passes AND soft
           fixtures are rejected), else "CONTRACT: FAIL" + the failing tests.
 
@@ -184,11 +214,11 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 3 CONTENT ENGINE. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:content --top-k 4 --query "generate-and-test / curriculum coverage / generator-starvation pitfalls" . Per out/factory/SPEC.md, add out/factory/baker.js: a
+          STAGE 3 CONTENT ENGINE. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:content --top-k 4 --query "generate-and-test / curriculum coverage / generator-starvation pitfalls" . Per {{OUT}}/SPEC.md, add {{OUT}}/baker.js: a
           curriculum graph (insights + dependencies) and a SOLVER-GATED generate-and-test baker that accepts a
           level iff the solver proves it solvable, unique-optimal per contract, AND it teaches its assigned
-          insight (revelation certificate). Run the baker to write out/factory/pack.json (every insight covered)
-          and out/factory/rejections.json (per-gate census). Add out/factory/content.test.js asserting: pack.json
+          insight (revelation certificate). Run the baker to write {{OUT}}/pack.json (every insight covered)
+          and {{OUT}}/rejections.json (per-gate census). Add {{OUT}}/content.test.js asserting: pack.json
           exists, EVERY curriculum insight has >=1 level, and each packed level is solvable+unique via the
           solver. On a FAIL retry, fix; if the upstream is a PLAYABILITY: WEAK report, RE-BAKE to raise the
           named weak dimension (e.g. add higher-par levels for the ramp, or levels needing more technique
@@ -199,7 +229,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd {{OUT}} && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "CONTENT: PASS" if NODE_EXIT=0 (coverage + per-level
           solvability tests green), else "CONTENT: FAIL" + the failing tests.
 
@@ -214,12 +244,15 @@ graph:
         effort: high
         role: |
           PLAYABILITY GATE. REAL tools, cwd = repo root. FIRST Read graphs/oracleforge/design/playability.md.
-          Using the SAME solver/engine the pipeline built, MEASURE the baked pack (out/factory/pack.json): write
-          out/factory/playability.js computing — par distribution (ramp), unique-optimal %, greedy/straight-aim
-          regret %, technique-tier spread, pack size vs curriculum — and write out/factory/playability.json (the
-          measured report). Add out/factory/playability.test.js (node --test) asserting the PASS thresholds from
-          playability.md §gate (par spans >=3 values; >=50% unique-optimal; greedy regret on >=25% of par>=2
-          levels; >=2 technique tiers; pack size >= insight count). ALSO add a SOUL-NECESSITY check
+          Using the SAME solver/engine the pipeline built, MEASURE the baked pack ({{OUT}}/pack.json): write
+          {{OUT}}/playability.js computing — par distribution (ramp), unique-optimal %, greedy/straight-aim
+          regret %, technique-tier spread, pack size vs curriculum, AND the ABSOLUTE on-ramp (easiest par +
+          count of genuinely easy/teaching levels, NOT just the par spread) — and write {{OUT}}/playability.json
+          (the measured report). Add {{OUT}}/playability.test.js (node --test) asserting the PASS thresholds
+          from playability.md §gate (par spans >=3 values; >=50% unique-optimal; greedy regret on >=25% of
+          par>=2 levels; >=2 technique tiers; pack size >= insight count; AND the ON-RAMP FLOOR — an easy
+          band exists: the easiest level is genuinely gentle AND >=2 easy/teaching levels precede the hard
+          ones, so the pack is not a medium→hard cognitive wall). ALSO add a SOUL-NECESSITY check
           (playability.md §soul-necessity): read the SPEC's "soul:" technique, disable that one inference rule
           in the solver, re-run the census over the pack, and assert in playability.test.js that >=80% of
           instances become unsolvable OR lose unique-optimal without it (the soul is load-bearing, not
@@ -231,8 +264,8 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
-          2>&1; echo "NODE_EXIT=$?". Read out/factory/playability.json. End with EXACTLY "PLAYABLE: PASS" if
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd {{OUT}} && node --test
+          2>&1; echo "NODE_EXIT=$?". Read {{OUT}}/playability.json. End with EXACTLY "PLAYABLE: PASS" if
           NODE_EXIT=0 (all playability thresholds met), else "PLAYABLE: WEAK" + the failing dimension(s) and the
           measured numbers (so the content stage can re-bake to fix it).
 
@@ -250,28 +283,43 @@ graph:
           graphs/oracleforge/design/game-ui.md AND docs/grounding/ui-design-contract.md (HSL token taxonomy +
           a11y), docs/grounding/motion-math.md (easing + volume-preserving squash & stretch for the cell/win
           animations — never linear), docs/grounding/game-ui-review.md (the objective UX rules you must satisfy)
-          — and write out/factory/DESIGN.md freezing THIS game's UI constraints per game-ui.md §5 (palette
+          — and write {{OUT}}/DESIGN.md freezing THIS game's UI constraints per game-ui.md §5 (palette
           token values, font, readability rules, juice budget = trust vs delight, explicit do/don'ts). Then, per
-          out/factory/SPEC.md + DESIGN.md, build the playable PWA shell: out/factory/index.html + out/factory/app.js
+          {{OUT}}/SPEC.md + DESIGN.md, build the playable PWA shell: {{OUT}}/index.html + {{OUT}}/app.js
           (flat-screen router, selection screen, DAILY [UTC date->seed->same level, no backend], ENDLESS, and a HINT
           LADDER orient->eliminate->move->step-through driven by the solver), PLUS a design-tokens stylesheet (CSS
           custom properties per §2) — state by shape+ARIA not color alone, a prefers-reduced-motion block, a
-          :focus-visible style, and restrained game-feel (§3). Add out/factory/shell.test.js (node --test, logic/DOM
+          :focus-visible style, and restrained game-feel (§3). Add {{OUT}}/shell.test.js (node --test, logic/DOM
           -string only — no browser): Daily seed -> identical level (determinism), a grace-streak rule, hint
           eureka-integrity, AND the §6 TESTABLE UI CONTRACT (tokens stylesheet referenced + no raw hex in app.js;
           interactive cells carry role+aria-label+aria-pressed and a non-color data-state/glyph; a
           prefers-reduced-motion block exists; a focus-visible style exists; DESIGN.md exists). Then audit for DARK
-          PATTERNS (graphs/oracleforge/vendor/agents/ethics-auditor.md) and record out/factory/ETHICS.md (zero
-          unmitigated). On a FAIL retry — or if the upstream is a UX: FAIL or FEEL: WEAK report — address its
-          specific findings (re-juice the motion, fix tokens/a11y/readability, add payoff). End "SHELL: BUILT".
+          PATTERNS (graphs/oracleforge/vendor/agents/ethics-auditor.md) and record {{OUT}}/ETHICS.md (zero
+          unmitigated).
+          COMPREHENSION & IDENTITY (non-negotiable, what the UX/FEEL gates measure): render targets/state in
+          their MEANINGFUL player-facing form — a color SWATCH / icon / word — and NEVER a raw engine index or
+          enum number (printing a palette index like "/0" or "/4" is forbidden; it draws the data structure, not
+          the game). Make the GOAL and the primary ACTION identifiable on the first frame, and include a TEACHING
+          SURFACE (a legend / principles panel / first-run tutorial) that explains the core mechanic. Commit to a
+          VISUAL IDENTITY (a deliberate theme, an intentional palette, real typography) — not the default
+          engineer's-data-structure look.
+          NORTH STAR (optional, additive — gracefully no-op if absent): if {{OUT}}/DESIGN_REF.* exists OR the
+          idea-spec carries an art:/look: field, treat it as the visual target this shell should honor; if
+          neither is present, proceed normally.
+          ANTI-THRASH: if the upstream UX: FAIL / FEEL: WEAK report flags the SAME comprehension or identity issue
+          a SECOND time (e.g. still opaque, still raw indices, still characterless), do NOT just re-juice or
+          re-tweak the same wrong layout — STEP BACK and reconsider the whole frame: re-theme, change the
+          representation (swatches/icons/words for indices), add the missing teaching surface, give it identity.
+          On a FAIL retry — or if the upstream is a UX: FAIL or FEEL: WEAK report — address its specific findings
+          (re-juice the motion, fix tokens/a11y/readability, add payoff, fix comprehension/identity). End "SHELL: BUILT".
 
     - id: shell_verify
       type: agent
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
-          2>&1; echo "NODE_EXIT=$?". Also confirm out/factory/DESIGN.md and out/factory/ETHICS.md exist and ETHICS
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd {{OUT}} && node --test
+          2>&1; echo "NODE_EXIT=$?". Also confirm {{OUT}}/DESIGN.md and {{OUT}}/ETHICS.md exist and ETHICS
           records no UNMITIGATED dark pattern. (node --test covers the §6 UI-contract assertions.) End with EXACTLY
           "SHELL: PASS" if NODE_EXIT=0 AND DESIGN.md present AND ethics clean, else "SHELL: FAIL" + reason.
 
@@ -288,18 +336,37 @@ graph:
           UX AUDIT — independent rendered-DOM verifier (edit nothing). FIRST Read graphs/oracleforge/design/ux-audit.md.
           You have Bash + the Playwright MCP browser tools (find via ToolSearch "playwright browser"). Serve the
           built PWA detached and wait for the port (bounded curl-retry, NO foreground sleep):
-            ROOT="$PWD"; (cd out/factory && "$ROOT/.venv/bin/python" -m http.server 8137 >/dev/null 2>&1 &) ; for i in $(seq 1 20); do curl -sf localhost:8137 >/dev/null && break; done
+            ROOT="$PWD"; (cd {{OUT}} && "$ROOT/.venv/bin/python" -m http.server 8137 >/dev/null 2>&1 &) ; for i in $(seq 1 20); do curl -sf localhost:8137 >/dev/null && break; done
           Then browser_navigate to http://localhost:8137 and, at viewports 320x568 / 768x1024 / 1280x800,
           MEASURE the CRITICAL checks via browser_evaluate / browser_snapshot (computed values, not vibes):
           first-frame goal+affordance visible; state carries a non-color encoding; text contrast >=4.5:1;
           NON-TEXT contrast >=3:1 (WCAG 1.4.11) for the focus-visible ring, tile/piece outlines & gridlines,
           selected/active borders, and glyph/shape state-markers (the non-color encoding must itself clear 3:1);
           interactive targets >=44x44px with >=8px gaps; no horizontal scroll; the interaction-state matrix
-          (invalid/undo/solved/stuck/share-loaded/reduced-motion) handled in the DOM; AI-SLOP genre-swap
-          (labels hidden -> still identifiable). When done: pkill -f "http.server 8137" (best-effort).
+          (invalid/undo/solved/stuck/share-loaded/reduced-motion) handled in the DOM.
+          THEN — the CRITICAL COMPREHENSION checks (measured on the rendered DOM as a FIRST-TIME PLAYER with NO
+          prior knowledge of this game — read only what the page actually shows):
+          (a) GOAL + ACTION on the first frame — a stated OBJECTIVE element (what am I trying to do?) AND a
+              how-to/legend surface (how do I do it?) are both present and visible without scrolling; if a
+              newcomer can't name the goal and the primary action from frame one, FAIL.
+          (b) MEANINGFUL representation, NO raw-internal encodings — targets/states must be shown in their
+              MEANINGFUL player-facing form (a color swatch / icon / word), NEVER bare engine indices or enum
+              numbers. If a cell/target renders a raw internal value (e.g. a palette INDEX like "/0", "/4", an
+              enum ordinal, a state id) as the player-facing signal, that is an AUTOMATIC FAIL — the build
+              "draws the data structure / prints the variables" instead of the game. (Printing index numbers
+              does NOT satisfy color-independence.)
+          (c) TEACHING surface — a legend / principles panel / first-run tutorial exists that explains the CORE
+              MECHANIC (not just controls). Assert the DOM contains a discoverable surface teaching how the
+              mechanic works; absent ⇒ FAIL.
+          (d) GENRE / IDENTITY legible (the AI-SLOP genre-swap, strengthened): with all text labels hidden, the
+              rendered board/pieces must still read as A SPECIFIC game with its own visual identity — not a
+              generic gray grid that could be any app. Anonymous default UI ⇒ FAIL.
+          When done: pkill -f "http.server 8137" (best-effort).
         instruction: |
-          End with EXACTLY "UX: PASS" if every CRITICAL check holds at all three viewports, else "UX: FAIL"
-          + each failed check with its measured value and viewport (so shell can fix it).
+          End with EXACTLY "UX: PASS" if every CRITICAL check holds at all three viewports — including the
+          comprehension checks (goal+action on first frame, meaningful-not-raw representation, a teaching
+          surface, genre/identity legible) — else "UX: FAIL" + each failed check with its measured value and
+          viewport (so shell can fix it). A raw engine index shown to the player is an automatic UX: FAIL.
 
     - id: ux_gate
       type: loop_counter
@@ -312,12 +379,16 @@ graph:
         agentType: feature-dev:code-reviewer
         role: |
           Acting as the PLAYABILITY ASSESSOR (see .claude/agents/playability-assessor.md), critique the built
-          web game in out/factory/ for GAME FEEL + PLAYABILITY — read-only, edit nothing. Read app.js, index.html,
+          web game in {{OUT}}/ for GAME FEEL + PLAYABILITY — read-only, edit nothing. Read app.js, index.html,
           the tokens/CSS, and docs/grounding/motion-math.md. Judge: responsiveness (input->response latency);
           impact/payoff (does a tap/toggle/win render LAYERED feedback — easing, volume-preserving squash &
           stretch, a celebratory win pulse — not just mutate state?); motion juice (flag dead instant/linear
           changes or missing easing per motion-math.md); clarity (goal/state readable, not color-alone); loop
-          closure (clear win + restart); peak moments; difficulty pacing. Cite code (file:line) per finding.
+          closure (clear win + restart); peak moments; difficulty pacing. ALSO judge VISUAL IDENTITY ("not a
+          wireframe"): the build must COMMIT to an aesthetic — a theme, a palette chosen with intent, real
+          typography — not ship the default engineer's-data-structure look (bare gray cells, raw indices,
+          unstyled defaults). A characterless-but-functional UI that reads like someone drew the data
+          structure is a FEEL: WEAK finding, even when every mechanical check passes. Cite code (file:line) per finding.
           End with EXACTLY "FEEL: OK" if there are no high-severity feel/playability problems, else "FEEL: WEAK"
           + a prioritized findings list (severity, location, the dead/flat issue, a concrete fix) so shell re-juices.
 
@@ -331,10 +402,10 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 5 CREATION & SHARING. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:share --top-k 4 --query "codec roundtrip / fuzz / migration pitfalls" . Per out/factory/SPEC.md, add out/factory/codec.js:
+          STAGE 5 CREATION & SHARING. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:share --top-k 4 --query "codec roundtrip / fuzz / migration pitfalls" . Per {{OUT}}/SPEC.md, add {{OUT}}/codec.js:
           a versioned URL codec (encode/decode a level, STRICT decoder, content hash, schemaVersion additive-
           only with a named migration registry) + pure editor reducers (import re-verifies via the solver).
-          Add out/factory/codec.test.js: ROUNDTRIP, FUZZ (random/garbled input never throws unhandled), reducer
+          Add {{OUT}}/codec.test.js: ROUNDTRIP, FUZZ (random/garbled input never throws unhandled), reducer
           tests, and a frozen migration fixture per version. On a FAIL retry, fix. End "CODEC: BUILT".
 
     - id: share_verify
@@ -342,7 +413,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd {{OUT}} && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "CODEC: PASS" if NODE_EXIT=0 (roundtrip/fuzz/migration
           green), else "CODEC: FAIL" + the failing tests.
 
@@ -356,13 +427,13 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 6 SHIP. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:ship --top-k 4 --query "PWA version-sync / service-worker cache / worker smoke pitfalls" . Per out/factory/SPEC.md, assemble the deliverable: a PWA
-          service worker out/factory/sw.js (precache-everything, skipWaiting + clients.claim, a VERSION constant)
-          and ONE Cloudflare Worker out/factory/worker.js (shape: graphs/oracleforge/vendor/templates/ops/worker.js)
+          STAGE 6 SHIP. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:ship --top-k 4 --query "PWA version-sync / service-worker cache / worker smoke pitfalls" . Per {{OUT}}/SPEC.md, assemble the deliverable: a PWA
+          service worker {{OUT}}/sw.js (precache-everything, skipWaiting + clients.claim, a VERSION constant)
+          and ONE Cloudflare Worker {{OUT}}/worker.js (shape: graphs/oracleforge/vendor/templates/ops/worker.js)
           exporting `default { fetch(request, env) }`: static asset passthrough, POST /api/comment
           (validate->store->204, junk->400), POST /api/hint (salted hash of IP + UTC day, per-day grant, 429 on
           scarcity, NO raw IP / NO cookies), GET /api/comments (token-gated), feedback with a 1-5 rating + a
-          REGRET probe. Add out/factory/smoke.test.js (node --test) that imports worker.js and calls its fetch()
+          REGRET probe. Add {{OUT}}/smoke.test.js (node --test) that imports worker.js and calls its fetch()
           IN-PROCESS with mock Request objects + a stub env (no network, no long-lived server): assert comment
           204, junk 400, hint 429 on the 2nd same-day call, and that sw.js VERSION matches package.json version.
           Do NOT run `wrangler dev` or any production deploy. On a FAIL retry, fix. End "SHIP: BUILT".
@@ -372,7 +443,7 @@ graph:
       config:
         effort: low
         role: |
-          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd out/factory && node --test
+          INDEPENDENT VERIFIER — do NOT modify any file. Run EXACTLY: ROOT="$PWD"; cd {{OUT}} && node --test
           2>&1; echo "NODE_EXIT=$?". End with EXACTLY "SHIP: PASS" if NODE_EXIT=0 (all in-process smoke checks
           + version-sync green), else "SHIP: FAIL" + the failing tests.
 
@@ -388,10 +459,10 @@ graph:
         role: |
           SHIP SURVIVAL — final independent verifier; the shipped artifact must survive its own pipeline
           (edit nothing). FIRST Read graphs/oracleforge/design/ship-survival.md. You have Bash + the Playwright
-          MCP browser tools. Serve out/factory detached and wait for the port (bounded curl-retry, no foreground
+          MCP browser tools. Serve {{OUT}} detached and wait for the port (bounded curl-retry, no foreground
           sleep), browser_navigate to it, then via browser_evaluate run, IN-PAGE against the served bundle's own
           engine: (1) a mini yield-census over a FIXED seed-set — shipped solvable% and unique-optimal% must
-          match out/factory's recorded oracle/foundation numbers within tolerance; (2) a twin-run determinism
+          match {{OUT}}'s recorded oracle/foundation numbers within tolerance; (2) a twin-run determinism
           check; (3) soul-ablation still flips instances unsolvable/non-unique; (4) share-URL roundtrip to
           identical state; (5) version string == build hash == sw.js VERSION; (6) SW registered with the new
           hash + old cache purged, then reload OFFLINE and confirm the puzzle boots. Kill the server when done.
@@ -410,11 +481,14 @@ graph:
       config:
         effort: medium
         role: |
-          The game in out/factory/ passed EVERY independently-verified gate. Bash: ls -R out/factory (skip
+          The game in {{OUT}}/ passed EVERY independently-verified gate. Bash: ls -R {{OUT}} (skip
           node_modules). Produce the PRODUCTION REPORT: game name + one-line pitch; the measured oracle census
           numbers; what each stage produced (engine/solver, contract, level-pack size, shell modes, codec,
           PWA+Worker); and the exact commands to PLAY it locally and to DEPLOY it (the single `wrangler deploy`
-          a human runs). End with EXACTLY "PRODUCTION: READY".
+          a human runs). Then include a HUMAN-PLAYTEST CAVEAT (be honest, never silently claim fun): the
+          structural playability AND human-cognition fit (intuitive substrate / bounded working memory /
+          on-ramp) were GATED, but subjective fun is not machine-provable and this run did NO human playtest —
+          recommend a human first-look before any public release. End with EXACTLY "PRODUCTION: READY".
 
     - id: reflect
       type: agent
@@ -452,7 +526,7 @@ graph:
         role: |
           A build stage exhausted its retries (upstream holds its last failing output). You have Bash (cwd =
           repo root). Identify which stage/gate ran out of retries, summarize the last failing tests, and state
-          the suspected blocker + the smallest change likely to unblock it. The partial game is in out/factory/.
+          the suspected blocker + the smallest change likely to unblock it. The partial game is in {{OUT}}/.
           End with EXACTLY "FACTORY: BLOCKED — needs attention".
 
   edges:
@@ -460,9 +534,11 @@ graph:
     - { from: recall, to: critic_determinism }
     - { from: recall, to: critic_completeness }
     - { from: recall, to: critic_tractability }
+    - { from: recall, to: critic_human }
     - { from: critic_determinism, to: synthesize }
     - { from: critic_completeness, to: synthesize }
     - { from: critic_tractability, to: synthesize }
+    - { from: critic_human, to: synthesize }
     # Stage 0 idea-kill gate: anchor GO to the FIRST line (a NO-GO whose prose mentions "COUNCIL: GO" must NOT pass)
     - { from: synthesize, to: oracle, condition: "regex:^COUNCIL: GO" }
     - { from: synthesize, to: blocked_idea, condition: "default" }

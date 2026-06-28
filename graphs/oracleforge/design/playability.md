@@ -25,6 +25,10 @@ For the baked level pack, compute with the SAME solver the rest of the pipeline 
 ## The gate (PLAYABLE: PASS thresholds — tune per game in the spec, these are defaults)
 PASS requires ALL of:
 - par spans ≥ 3 distinct values (a ramp exists);
+- **on-ramp FLOOR (absolute, not just spread):** a genuine easy/teaching band exists — the easiest level is
+  gentle AND ≥ 2 easy levels precede the hard ones. A par *spread* alone does NOT satisfy this. Bleedweave
+  shipped `easy:0 / medium:7 / hard:14` (par started at 4) and was a cognitive WALL to a newcomer — its
+  parSpan-6 still "passed" the old ramp check. Measure the absolute easiest par + the easy-level count.
 - ≥ 50% of levels are unique-optimal;
 - straight-aim/greedy regret on ≥ 25% of the non-trivial (par≥2) levels (real decisions exist);
 - ≥ 2 distinct technique tiers represented across the pack (escalating aha);
@@ -52,10 +56,33 @@ ABLATES it: disable that one inference rule in the exact solver and re-run the c
 
 > Distilled from `fagemx/gstack-game` (`implementation-handoff` "Name the Soul" + `game-codex` necessity framing).
 
-## Not gated here (honest boundary)
-Subjective "fun" and visual/audio *feel* are not mechanically provable — gstack scores them by judgment;
-we don't claim them. This gate certifies the **structural** playability the oracle CAN measure. The shell
-stage's design grounding (`game-ui.md`) and the human first-look protocol cover the rest.
+## Teach the mechanic visually + visual identity (carried by shell / ux_audit)
+Structural depth is worthless if the player can't SEE the puzzle. Two requirements ride alongside this
+gate and are enforced downstream by the shell stage and the `ux_audit` rendered-DOM checks:
+- **Teach the mechanic visually:** the shell must surface the core mechanic — a legend / principles panel /
+  first-run tutorial — and render targets/state in their MEANINGFUL form (a color swatch / icon / word),
+  NEVER as raw engine indices or enum numbers. A build that "prints the data structure" is unplayable to a
+  newcomer however clean its census numbers are.
+- **Visual identity (not a wireframe):** the build must commit to an aesthetic (a theme, an intentional
+  palette, real typography), not ship the default engineer's-data-structure look. With labels hidden it must
+  still read as *a specific game*.
+
+## Human-cognition fit is gated UPSTREAM (Stage 0), not here
+Structural depth means nothing if the *core mechanic* is hostile to human cognition (an arbitrary-table
+recall + an in-head topological sort — see `examples/bleedweave-postmortem.md`). That is caught at the
+front door by the **`critic_human`** council critic against `design/human-fit.md` (intuitive substrate /
+bounded working memory / legible state / fun-early); a `human-unfit` idea is a hard NO-GO, parked, never
+built. This gate then enforces the **on-ramp floor** above so a human-fit mechanic still ships with a
+gentle entry.
+
+## Not gated here (honest boundary — no silent claims)
+Subjective "fun" is not fully machine-provable. We do NOT claim it. What the factory now DOES enforce:
+the human-cognition-fit critic (Stage 0) rejects provably human-hostile mechanics; this gate enforces the
+on-ramp floor + structural depth; the shell/`ux_audit` enforce visual comprehension. What remains genuinely
+unprovable — the last mile of "is it *delightful*" — is **not** silently asserted: the autonomous run does
+NO human playtest, so the **ship report explicitly recommends a human first-look** before any release. The
+old wording ("a human first-look protocol covers the rest") was dishonest — no such protocol runs inside an
+autonomous build; the gap is now named in the output instead of assumed away.
 
 ## CREDITS / provenance
 Concept distilled from `fagemx/gstack-game` (MIT) — its `/build-playability-review` and `/feel-pass`

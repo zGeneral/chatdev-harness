@@ -36,12 +36,37 @@ matrix, then **DOM/CSS-measures** computable checks — no subjective scoring. F
 - **AI-SLOP genre-swap:** with all text labels hidden, the puzzle is still identifiable as *this* game (the
   board/pieces render distinctly), not anonymous default UI.
 
+## CRITICAL — comprehension (the "can a first-time player understand & play this?" checks)
+The contrast/tap-size/ARIA checks above prove a build is *accessible*; they do not prove it is
+*understandable*. A build can clear every a11y check and still ship opaque — abstract cells printing raw
+internal numbers, no stated goal, no explanation of the mechanic. These checks close that gap. Measure each
+on the rendered DOM **as a first-time player with NO prior knowledge** — read only what the page actually
+shows. Any fail ⇒ UX: FAIL → back to shell.
+- **Goal + action on first frame:** on first paint (no scroll) a stated OBJECTIVE element (what am I trying
+  to do?) AND a how-to/legend surface (how do I act?) are BOTH present. Query the DOM for both; if a newcomer
+  can't name the goal and the primary action from frame one, FAIL.
+- **Meaningful representation — no raw engine indices (AUTOMATIC FAIL):** targets and states must render in
+  their *meaningful* player-facing form — a **color swatch / icon / word** — never a bare engine index or
+  enum number. If any cell/target shows a raw internal value as the player-facing signal — a palette INDEX
+  (`/0`, `/4`), an enum ordinal, a state id — this is an **automatic FAIL**: the build "draws the data
+  structure / prints the variables" instead of rendering the game. (Printing index numbers is NOT a valid
+  color-independence encoding — it is technically-compliant, humanly-unreadable slop.) Signal to compute:
+  assert no player-facing cell/target text is a bare integer or `name/index` form that maps to an internal id.
+- **Teaching surface:** a legend / principles panel / first-run tutorial exists in the DOM that explains the
+  CORE MECHANIC (not merely the controls). Assert such a surface is present and discoverable; absent ⇒ FAIL.
+- **Genre / identity legible** (the AI-SLOP genre-swap, strengthened): with all text labels hidden, the
+  rendered board/pieces must still read as **a specific game with its own visual identity**, not a generic
+  gray grid that could be any app. A characterless default grid ⇒ FAIL.
+
 ## HIGH (flag; fix expected)
 - Tutorial-bloat: first-screen + first-level non-skippable text ≤ 100 words (fail if > 100 or > 60% of text).
 - Dead-input: after ~N seconds idle, a hint/affordance appears.
 
 ## Output
-End with EXACTLY `UX: PASS` if all CRITICAL checks hold at all viewports, else `UX: FAIL` + each failed check
-with its measured value and the viewport. Edit nothing — you are a verifier; `shell` applies fixes.
+End with EXACTLY `UX: PASS` if all CRITICAL checks hold at all viewports — both the a11y/feel checks AND the
+comprehension checks (goal+action on first frame, meaningful-not-raw representation, teaching surface,
+genre/identity legible) — else `UX: FAIL` + each failed check with its measured value and the viewport. A raw
+engine index shown to the player is an automatic `UX: FAIL`. Edit nothing — you are a verifier; `shell`
+applies fixes.
 
 CREDITS: distilled from `fagemx/gstack-game` (MIT); our words; nothing installed.
