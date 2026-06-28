@@ -160,5 +160,10 @@ engine calls it best-effort at the end of every graph). Deploy/secrets: `cloudfl
 
 ## Working in this repo (isolation rules)
 - All writes stay inside this repo. **Never modify the original ChatDev reference repo** (read-only reference).
-- Built apps go in `./out/<graph>/` (gitignored), kept separate from harness config (`.claude/`, `CLAUDE.md`).
+- Built apps go in `./out/<graph>/<idea-slug>/` (gitignored), kept separate from harness config (`.claude/`,
+  `CLAUDE.md`). **Per-idea isolation:** the engine resolves each run's output folder as
+  `out/<graph-id>/<idea-slug>` (slug derived deterministically from the run's IDEA path/text) and substitutes
+  the literal token `{{OUT}}` for it in every node's `role`/`instruction`/`content` before execution. Author
+  graphs to reference `{{OUT}}/…` (never a hardcoded `out/<graph>`) so a fresh idea never collides with — or
+  inherits stale files from — a previous build. Graphs without the token are unaffected.
 - This harness is interactive-first and runs on the Claude subscription — **no `ANTHROPIC_API_KEY`**.

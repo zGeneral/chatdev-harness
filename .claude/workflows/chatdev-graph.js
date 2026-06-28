@@ -200,6 +200,45 @@ if (!G || !G.nodes) {
   return { error: 'no graph', argType: typeof args }
 }
 log('Graph "' + (G.id || 'unnamed') + '": ' + (G.nodes || []).length + ' nodes, ' + (G.edges || []).length + ' edges.')
+
+// ---------------------------------------------------------------------------
+// Per-IDEA output isolation. Every run writes into its OWN folder under the
+// graph's output dir, so a fresh idea never collides with — or inherits stale
+// files from — a previous build (the bug that left a prior game's baker.js /
+// codec.js behind in a shared out/factory). A graph references this folder as
+// the literal token {{OUT}}; here we resolve it from the run's input + graph id
+// and substitute it into every node's role/instruction/content before exec:
+//   out/<graph-id>/<idea-slug>     e.g.  out/factory/bleedweave
+// The slug is derived deterministically from the IDEA path/text — no clock/RNG
+// (the Workflow sandbox forbids them, and determinism keeps re-runs in-place).
+// Graphs that don't use {{OUT}} are unaffected (nothing to substitute).
+// ---------------------------------------------------------------------------
+const slugify = (s) => String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48)
+const deriveIdeaSlug = (input) => {
+  const s = String(input == null ? '' : input).trim()
+  if (!s) return 'build'
+  const base = s.split(/[\\/]/).pop().replace(/\.[A-Za-z0-9]+$/, '').replace(/^idea[_-]/i, '')
+  let slug = slugify(base)
+  if (!slug) { // free-text idea with no filename: a stable FNV-1a hash of the text
+    let h = 0x811c9dc5 >>> 0
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0 }
+    slug = 'idea-' + (h >>> 0).toString(16)
+  }
+  return slug
+}
+const OUT = 'out/' + (slugify(G.id) || 'graph') + '/' + deriveIdeaSlug(initialInput)
+if (Array.isArray(G.nodes)) {
+  const subOut = (v) => (typeof v === 'string' ? v.split('{{OUT}}').join(OUT) : v)
+  for (const n of G.nodes) {
+    if (n && n.config) {
+      if (n.config.role != null) n.config.role = subOut(n.config.role)
+      if (n.config.instruction != null) n.config.instruction = subOut(n.config.instruction)
+      if (n.config.content != null) n.config.content = subOut(n.config.content)
+    }
+  }
+}
+log('Per-idea output dir: ' + OUT + '  (token {{OUT}} resolved across ' + (G.nodes || []).length + ' nodes)')
+
 const result = await runGraph(G, initialInput, executeNode, log)
 log('Graph done in ' + result.steps + ' steps. Final node: ' + result.finalNode)
 

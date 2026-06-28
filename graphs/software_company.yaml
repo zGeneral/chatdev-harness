@@ -9,10 +9,10 @@ graph:
       type: literal
       config:
         content: |
-          Build a Python module ./out/software_company/temp.py with:
+          Build a Python module ./{{OUT}}/temp.py with:
             celsius_to_fahrenheit(c: float) -> float   # round to 2 dp
             fahrenheit_to_celsius(f: float) -> float    # round to 2 dp
-          Plus pytest tests ./out/software_company/test_temp.py covering: 0C==32F, 100C==212F, -40C==-40F,
+          Plus pytest tests ./{{OUT}}/test_temp.py covering: 0C==32F, 100C==212F, -40C==-40F,
           37C==98.6F, and a round-trip (c -> f -> c) for a few values.
 
     - id: build
@@ -20,8 +20,8 @@ graph:
       config:
         effort: medium
         role: |
-          You are the Programmer with REAL tools. TDD: create ./out/software_company, write test_temp.py FIRST,
-          then temp.py, then run `ROOT="$PWD"; cd out/software_company && "$ROOT/.venv/bin/python" -m pytest -q`
+          You are the Programmer with REAL tools. TDD: create ./{{OUT}}, write test_temp.py FIRST,
+          then temp.py, then run `ROOT="$PWD"; cd {{OUT}} && "$ROOT/.venv/bin/python" -m pytest -q`
           and iterate until it exits 0. If a previous attempt's review notes are upstream, apply them.
         instruction: 'Finish with EXACTLY one final line: "RESULT: PASS" if pytest exited 0, else "RESULT: FAIL".'
 
@@ -34,7 +34,7 @@ graph:
       config:
         agentType: feature-dev:code-reviewer
         role: |
-          Read ./out/software_company/temp.py and its tests. Confirm both functions are correct and rounded to 2dp,
+          Read ./{{OUT}}/temp.py and its tests. Confirm both functions are correct and rounded to 2dp,
           or list concrete issues. You are read-only.
 
     - id: test
@@ -42,7 +42,7 @@ graph:
       config:
         effort: low
         role: |
-          Run `ROOT="$PWD"; cd out/software_company && "$ROOT/.venv/bin/python" -m pytest -q` and report
+          Run `ROOT="$PWD"; cd {{OUT}} && "$ROOT/.venv/bin/python" -m pytest -q` and report
           the real exit code and passed/total. Do not edit anything.
 
   edges:
