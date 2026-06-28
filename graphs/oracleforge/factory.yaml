@@ -81,7 +81,9 @@ graph:
           You are the SYNTHESIZER (see graphs/oracleforge/vendor/agents/synthesizer.md). Upstream holds THREE
           independent critic verdicts (each starts "VERDICT:"). If >=2 say "unfit" -> NO-GO. Otherwise adopt
           the survivable redesigns and FREEZE the design. Use the Write tool to write out/factory/SPEC.md with:
-          front-matter; Frozen rules (axioms); Oracle sketch (state / move set / win predicate / pruning);
+          front-matter INCLUDING a "soul:" field — THE SOUL is the single signature deduction/technique the
+          puzzle is built around (it will later be ablation-tested to prove it is load-bearing, not decorative);
+          Frozen rules (axioms); Oracle sketch (state / move set / win predicate / pruning);
           Golden trace; Content dimensions; Difficulty seed; and an "IMPLEMENTATION CONTRACT" section that
           pins the canonical layout EVERY later stage must follow:
             * Language: JavaScript ESM. out/factory/package.json = {"type":"module"}.
@@ -215,8 +217,12 @@ graph:
           regret %, technique-tier spread, pack size vs curriculum — and write out/factory/playability.json (the
           measured report). Add out/factory/playability.test.js (node --test) asserting the PASS thresholds from
           playability.md §gate (par spans >=3 values; >=50% unique-optimal; greedy regret on >=25% of par>=2
-          levels; >=2 technique tiers; pack size >= insight count). Do NOT edit the pack here — if it's WEAK,
-          report which dimension so content re-bakes. End with "PLAYABILITY: BUILT".
+          levels; >=2 technique tiers; pack size >= insight count). ALSO add a SOUL-NECESSITY check
+          (playability.md §soul-necessity): read the SPEC's "soul:" technique, disable that one inference rule
+          in the solver, re-run the census over the pack, and assert in playability.test.js that >=80% of
+          instances become unsolvable OR lose unique-optimal without it (the soul is load-bearing, not
+          decorative). Do NOT edit the pack here — if it's WEAK or the soul is decorative, report which
+          dimension so content re-bakes. End with "PLAYABILITY: BUILT".
 
     - id: playability_verify
       type: agent
@@ -264,6 +270,30 @@ graph:
           "SHELL: PASS" if NODE_EXIT=0 AND DESIGN.md present AND ethics clean, else "SHELL: FAIL" + reason.
 
     - id: shl_gate
+      type: loop_counter
+      config: { max_iterations: 2 }
+
+    # ---- STAGE 4.5: UX AUDIT (render the PWA in a real browser and MEASURE it) ----
+    - id: ux_audit
+      type: agent
+      config:
+        effort: high
+        role: |
+          UX AUDIT — independent rendered-DOM verifier (edit nothing). FIRST Read graphs/oracleforge/design/ux-audit.md.
+          You have Bash + the Playwright MCP browser tools (find via ToolSearch "playwright browser"). Serve the
+          built PWA detached and wait for the port (bounded curl-retry, NO foreground sleep):
+            ROOT="$PWD"; (cd out/factory && "$ROOT/.venv/bin/python" -m http.server 8137 >/dev/null 2>&1 &) ; for i in $(seq 1 20); do curl -sf localhost:8137 >/dev/null && break; done
+          Then browser_navigate to http://localhost:8137 and, at viewports 320x568 / 768x1024 / 1280x800,
+          MEASURE the CRITICAL checks via browser_evaluate / browser_snapshot (computed values, not vibes):
+          first-frame goal+affordance visible; state carries a non-color encoding; text contrast >=4.5:1;
+          interactive targets >=44x44px with >=8px gaps; no horizontal scroll; the interaction-state matrix
+          (invalid/undo/solved/stuck/share-loaded/reduced-motion) handled in the DOM; AI-SLOP genre-swap
+          (labels hidden -> still identifiable). When done: pkill -f "http.server 8137" (best-effort).
+        instruction: |
+          End with EXACTLY "UX: PASS" if every CRITICAL check holds at all three viewports, else "UX: FAIL"
+          + each failed check with its measured value and viewport (so shell can fix it).
+
+    - id: ux_gate
       type: loop_counter
       config: { max_iterations: 2 }
 
@@ -319,6 +349,30 @@ graph:
           + version-sync green), else "SHIP: FAIL" + the failing tests.
 
     - id: shp_gate
+      type: loop_counter
+      config: { max_iterations: 2 }
+
+    # ---- STAGE 6.5: SHIP SURVIVAL (re-census the DEPLOYED bundle in a real browser) ----
+    - id: ship_survival
+      type: agent
+      config:
+        effort: high
+        role: |
+          SHIP SURVIVAL — final independent verifier; the shipped artifact must survive its own pipeline
+          (edit nothing). FIRST Read graphs/oracleforge/design/ship-survival.md. You have Bash + the Playwright
+          MCP browser tools. Serve out/factory detached and wait for the port (bounded curl-retry, no foreground
+          sleep), browser_navigate to it, then via browser_evaluate run, IN-PAGE against the served bundle's own
+          engine: (1) a mini yield-census over a FIXED seed-set — shipped solvable% and unique-optimal% must
+          match out/factory's recorded oracle/foundation numbers within tolerance; (2) a twin-run determinism
+          check; (3) soul-ablation still flips instances unsolvable/non-unique; (4) share-URL roundtrip to
+          identical state; (5) version string == build hash == sw.js VERSION; (6) SW registered with the new
+          hash + old cache purged, then reload OFFLINE and confirm the puzzle boots. Kill the server when done.
+        instruction: |
+          End with EXACTLY "SHIP-SURVIVAL: PASS" if every check holds (re-census within tolerance, determinism,
+          soul, share roundtrip, version sync, offline boot), else "SHIP-SURVIVAL: FAIL" + the failing check, the
+          measured value, and the baseline it violated.
+
+    - id: survival_gate
       type: loop_counter
       config: { max_iterations: 2 }
 
@@ -406,18 +460,26 @@ graph:
     - { from: play_gate, to: content }
     - { from: play_gate, to: blocked_build, condition: "exhausted" }
     - { from: shell, to: shell_verify }
-    - { from: shell_verify, to: share, condition: "regex:(^|\\n)SHELL: PASS\\s*$" }
+    - { from: shell_verify, to: ux_audit, condition: "regex:(^|\\n)SHELL: PASS\\s*$" }
     - { from: shell_verify, to: shl_gate, condition: "default" }
     - { from: shl_gate, to: shell }
     - { from: shl_gate, to: blocked_build, condition: "exhausted" }
+    - { from: ux_audit, to: share, condition: "regex:(^|\\n)UX: PASS\\s*$" }
+    - { from: ux_audit, to: ux_gate, condition: "default" }
+    - { from: ux_gate, to: shell }
+    - { from: ux_gate, to: blocked_build, condition: "exhausted" }
     - { from: share, to: share_verify }
     - { from: share_verify, to: ship, condition: "regex:(^|\\n)CODEC: PASS\\s*$" }
     - { from: share_verify, to: shr_gate, condition: "default" }
     - { from: shr_gate, to: share }
     - { from: shr_gate, to: blocked_build, condition: "exhausted" }
     - { from: ship, to: ship_verify }
-    - { from: ship_verify, to: ship_report, condition: "regex:(^|\\n)SHIP: PASS\\s*$" }
+    - { from: ship_verify, to: ship_survival, condition: "regex:(^|\\n)SHIP: PASS\\s*$" }
     - { from: ship_verify, to: shp_gate, condition: "default" }
     - { from: shp_gate, to: ship }
     - { from: shp_gate, to: blocked_build, condition: "exhausted" }
+    - { from: ship_survival, to: ship_report, condition: "regex:(^|\\n)SHIP-SURVIVAL: PASS\\s*$" }
+    - { from: ship_survival, to: survival_gate, condition: "default" }
+    - { from: survival_gate, to: ship }
+    - { from: survival_gate, to: blocked_build, condition: "exhausted" }
     - { from: ship_report, to: reflect }

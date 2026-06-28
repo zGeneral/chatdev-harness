@@ -40,6 +40,18 @@ Otherwise → PLAYABLE: WEAK, naming the failing dimension, and the content stag
 | Clarity / "is there a puzzle" | greedy-regret % (obvious move is wrong) |
 | Session viability / retention signal | pack size vs curriculum + ramp spread |
 
+## Soul-necessity (the signature technique must be load-bearing)
+`content`'s revelation certificates prove an insight is PRESENT and teachable, but not NECESSARY — a build
+can ship where the headline technique is decorative (instances stay solvable + unique-optimal without ever
+using it). That is "fake-depth" slop. So `synthesize` declares **THE SOUL** — the single signature
+deduction/technique the puzzle is built around — as a `soul:` contract field in SPEC.md, and this gate
+ABLATES it: disable that one inference rule in the exact solver and re-run the census over the pack.
+- **PASS:** with the soul rule removed, ≥ 80% of instances become unsolvable OR lose their unique-optimal
+  solution (the soul is load-bearing).
+- **FAIL (decorative soul):** removing it changes solvability/uniqueness for < 80% — flag and re-bake/redesign.
+
+> Distilled from `fagemx/gstack-game` (`implementation-handoff` "Name the Soul" + `game-codex` necessity framing).
+
 ## Not gated here (honest boundary)
 Subjective "fun" and visual/audio *feel* are not mechanically provable — gstack scores them by judgment;
 we don't claim them. This gate certifies the **structural** playability the oracle CAN measure. The shell
