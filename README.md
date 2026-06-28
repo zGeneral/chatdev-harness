@@ -91,11 +91,40 @@ memory + image features. Node/edge reference: `CLAUDE.md` → "Declarative graph
 | `consolidate_lessons.yaml` | Maintenance: dedupe/merge the lessons store. |
 | `demo_build.yaml` | Minimal example (spec → build → review → report). |
 | `tandem.yaml` *(on the `tandem` branch)* | The Tandem puzzle, grounded by the game-design books. |
+| [`oracleforge/factory.yaml`](graphs/oracleforge/factory.yaml) | **Autonomous game factory** — your game idea → a shippable, tested web-game PWA through every gated stage (see "Build your own game" below). |
+| [`oracleforge/*.yaml`](graphs/oracleforge/) | The factory's individual stages (`ideate`, `foundation`, `difficulty`, `content`, `shell`, `share`, `ship`, …) + `rebalance`, runnable standalone. |
 
-> Each graph currently has its task baked into its first node. To build **your own idea**, clone a graph and
-> edit that node (or use the graph editor in the GUI). Deliberately not reimplemented from ChatDev 2.0:
-> multi-provider models (Claude subscription only) — and its Vue editor is being replaced by the
+> Most graphs bake their task into the first node (clone + edit it, or use the GUI graph editor). The
+> **oracle factory is the exception — you pass it your own idea** (see below). Deliberately not reimplemented
+> from ChatDev 2.0: multi-provider models (Claude subscription only) — and its Vue editor is replaced by the
 > Cloudflare GUI in [`cloudflare/gui-worker/`](cloudflare/gui-worker/).
+
+## Build your own game — the autonomous oracle factory
+
+Have a game idea in a file (e.g. `idea.md`)? The **oracle game factory** ([`graphs/oracleforge/`](graphs/oracleforge/))
+takes it from **idea → a shippable, tested web game, autonomously**, through every stage in one run. Point it
+at your file:
+
+```
+# In Claude Code, inside the repo:
+/run-graph graphs/oracleforge/factory.yaml idea.md
+```
+
+`idea.md` is passed as the factory's input and its first node reads the file. (You can pass any path, or a
+one-line idea inline: `/run-graph graphs/oracleforge/factory.yaml "A 4×4 Lights-Out: tap toggles a cell + its neighbors; clear the board in fewest taps."`)
+
+**What it does:** a critic **council** first vets the idea for *oracle-fit*, then it builds and **independently
+verifies** each stage — exact solver + yield-census → difficulty contract → solver-gated level pack →
+design-grounded PWA shell → URL codec → PWA + Cloudflare Worker — even **rendering the UI and re-running the
+oracle inside the deployed bundle in a real browser**. It ends `PRODUCTION: READY` with a play/deploy report,
+or a clean `FACTORY: BLOCKED` report naming the blocker. The finished game lands in `out/factory/` (gitignored);
+play it with `cd out/factory && python3 -m http.server` (and `node --test` to re-verify).
+
+> **It's a deterministic-puzzle factory** (exactly-solvable, plan-then-run — think Lights-Out, Sokoban,
+> Hexcells). A real-time / physics / RNG / hidden-information game is **rejected at the oracle-fit gate by
+> design** — that's the gate working, not a failure. It's a long, heavy autonomous run. Memory/RAG grounding
+> is optional — the factory **degrades gracefully** without it. To run just one stage, use
+> `/run-graph graphs/oracleforge/<stage>.yaml`; to validate an idea without building, use `ideate.yaml`.
 
 ## Console (GUI)
 
@@ -115,12 +144,14 @@ auth-gated (`GUI_TOKEN`), with upstream tokens held server-side via service bind
 | [`.claude/commands/run-graph.md`](.claude/commands/run-graph.md) | `/run-graph` launcher. |
 | [`tools/`](tools/) | `mem.py` (lessons), `rag_search.py` (books), `genimage.py` (art). |
 | [`cloudflare/`](cloudflare/) | The memory Worker + the GUI app. |
+| [`docs/grounding/`](docs/grounding/) | Distilled design grounding (motion-math, UI-design contract, game-UI review) the roles read. |
 | [`CLAUDE.md`](CLAUDE.md) | Project charter (auto-loaded instructions). |
 | [`CHATDEV_UNDERSTANDING.md`](docs/CHATDEV_UNDERSTANDING.md) | Full ChatDev → harness concept mapping. |
 | [`SUMMARY.md`](docs/SUMMARY.md) · [`docs/build-history/`](docs/build-history/) | Summary · original build log. |
-| [`demo/`](demo/) | The built todo CLI + pytest suite (proof artifact). |
+| `out/` | Generated build output (**gitignored**) — where graphs and the factory write their apps (regenerable). |
 
 ## Credits
 
 Reimplements the idea of [ChatDev](https://github.com/OpenBMB/ChatDev) (OpenBMB). Built with
-Claude Code. The `demo/` app was authored end-to-end by the harness's own role-agents.
+Claude Code. The demo apps under `out/` (the todo CLI, the Lumens game, …) were authored
+end-to-end by the harness's own agents.
