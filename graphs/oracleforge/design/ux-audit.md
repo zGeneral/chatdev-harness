@@ -22,7 +22,12 @@ matrix, then **DOM/CSS-measures** computable checks — no subjective scoring. F
   visible (query the DOM for the board + an interactive control in the initial viewport box).
 - **Color-independence:** puzzle state must carry a redundant non-color encoding — assert cells expose a
   non-color signal (`data-state`/`aria-pressed`/glyph/text), not color alone.
-- **Contrast:** computed text-vs-background contrast ≥ 4.5:1 (compute from `getComputedStyle` colors).
+- **Text contrast:** computed text-vs-background contrast ≥ 4.5:1 (compute from `getComputedStyle` colors).
+- **Non-text contrast (WCAG 1.4.11):** computed ≥ 3:1 against the adjacent background for every UI element
+  a player must perceive that ISN'T text — the `:focus-visible` ring, tile/piece outlines & gridlines,
+  selected/active borders, and any glyph/shape state-marker (the non-color encoding from the color-
+  independence check must itself clear 3:1, not merely exist). A board whose pieces or focus ring are
+  technically-distinct-but-too-faint fails here even if all text passes.
 - **Touch targets:** every interactive element's `getBoundingClientRect()` ≥ 44×44px, with ≥8px gaps.
 - **No horizontal scroll:** `document.scrollingElement.scrollWidth ≤ clientWidth` at every viewport.
 - **Interaction-state matrix:** the DOM demonstrably handles each of: invalid move · undo/redo · solved ·

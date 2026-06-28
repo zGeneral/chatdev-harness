@@ -292,6 +292,8 @@ graph:
           Then browser_navigate to http://localhost:8137 and, at viewports 320x568 / 768x1024 / 1280x800,
           MEASURE the CRITICAL checks via browser_evaluate / browser_snapshot (computed values, not vibes):
           first-frame goal+affordance visible; state carries a non-color encoding; text contrast >=4.5:1;
+          NON-TEXT contrast >=3:1 (WCAG 1.4.11) for the focus-visible ring, tile/piece outlines & gridlines,
+          selected/active borders, and glyph/shape state-markers (the non-color encoding must itself clear 3:1);
           interactive targets >=44x44px with >=8px gaps; no horizontal scroll; the interaction-state matrix
           (invalid/undo/solved/stuck/share-loaded/reduced-motion) handled in the DOM; AI-SLOP genre-swap
           (labels hidden -> still identifiable). When done: pkill -f "http.server 8137" (best-effort).
