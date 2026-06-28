@@ -36,11 +36,13 @@ graph:
       config:
         effort: low
         role: |
-          You have Bash (cwd = repo root). Upstream is the game idea. Output it UNCHANGED, then two grounding
-          sections (run BOTH; tolerate "no relevant memory"/"MEMORY UNAVAILABLE"):
+          You have Bash (cwd = repo root). Upstream is the game idea. Output it UNCHANGED, then THREE grounding
+          sections (run ALL; tolerate "no relevant memory"/"MEMORY UNAVAILABLE") — STATIC knowledge + this
+          factory's own DYNAMIC oracle-fit lessons from past runs:
             .venv/bin/python tools/rag_search.py --notebook oforge-lessons --top-k 6 --query "<short query: oracle-fit, determinism, yield/starvation for THIS mechanic>"
             .venv/bin/python tools/rag_search.py --notebook game-design --top-k 4 --query "<short query: this game's puzzle/casual design>"
-          Output: <idea>\n\n## Ideation lessons\n<first>\n\n## Design principles\n<second>
+            .venv/bin/python tools/mem.py search --namespace lessons:ideation --top-k 5 --query "oracle-fit / twist-divergence / yield-starvation lessons for THIS mechanic"
+          Output: <idea>\n\n## Methodology (oforge)\n<first>\n\n## Design principles (books)\n<second>\n\n## Past oracle-fit lessons (this factory)\n<third>
 
     - id: critic_determinism
       type: agent
@@ -101,7 +103,7 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 0 ORACLE. REAL tools, cwd = repo root. Read out/factory/SPEC.md and follow its IMPLEMENTATION
+          STAGE 0 ORACLE. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:oracle --top-k 4 --query "deterministic engine / exact solver / yield-census pitfalls" . Read out/factory/SPEC.md and follow its IMPLEMENTATION
           CONTRACT exactly. Patterns: graphs/oracleforge/vendor/templates/solver/solver.js and
           .../engine/simulation.js. Write: out/factory/package.json ({"type":"module"}); out/factory/engine.js
           (deterministic engine honoring the SPEC golden trace + exact solver returning min length AND
@@ -131,7 +133,7 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 1 FOUNDATION. REAL tools, cwd = repo root. Per out/factory/SPEC.md, harden the engine into the
+          STAGE 1 FOUNDATION. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:foundation --top-k 4 --query "determinism / solver-engine equivalence / purity pitfalls" . Per out/factory/SPEC.md, harden the engine into the
           permanent core and ADD out/factory/foundation.test.js (node --test): a SOLVER<->ENGINE EQUIVALENCE
           test (the solver's solution actually wins under the engine), a PURITY test (no shared mutable state /
           wall-clock / RNG in a tick), and a TWIN-RUN determinism test (same input -> identical frames). Do
@@ -156,7 +158,7 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 2 DIFFICULTY CONTRACT. REAL tools, cwd = repo root. Per out/factory/SPEC.md, add out/factory/
+          STAGE 2 DIFFICULTY CONTRACT. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:difficulty --top-k 4 --query "anti-greedy / uniqueness / technique-tier contract pitfalls" . Per out/factory/SPEC.md, add out/factory/
           contract.js: 6-10 computable gates over (level, solution, frames) — default-outcome, structural
           minimums, ANTI-GREEDY (the obvious line must not win), UNIQUENESS, a technique-tier ladder, sequence
           shape, failure legibility. Add out/factory/contract.test.js with a STARTER band (passes all gates) and
@@ -182,7 +184,7 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 3 CONTENT ENGINE. REAL tools, cwd = repo root. Per out/factory/SPEC.md, add out/factory/baker.js: a
+          STAGE 3 CONTENT ENGINE. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:content --top-k 4 --query "generate-and-test / curriculum coverage / generator-starvation pitfalls" . Per out/factory/SPEC.md, add out/factory/baker.js: a
           curriculum graph (insights + dependencies) and a SOLVER-GATED generate-and-test baker that accepts a
           level iff the solver proves it solvable, unique-optimal per contract, AND it teaches its assigned
           insight (revelation certificate). Run the baker to write out/factory/pack.json (every insight covered)
@@ -244,8 +246,11 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 4 SHELL & RETENTION. REAL tools, cwd = repo root. FIRST Read graphs/oracleforge/design/game-ui.md
-          (UI/feel grounding) and write out/factory/DESIGN.md freezing THIS game's UI constraints per §5 (palette
+          STAGE 4 SHELL & RETENTION. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:shell --top-k 4 --query "shell determinism / hint integrity / dark-pattern / a11y pitfalls" . Then Read the UI grounding —
+          graphs/oracleforge/design/game-ui.md AND docs/grounding/ui-design-contract.md (HSL token taxonomy +
+          a11y), docs/grounding/motion-math.md (easing + volume-preserving squash & stretch for the cell/win
+          animations — never linear), docs/grounding/game-ui-review.md (the objective UX rules you must satisfy)
+          — and write out/factory/DESIGN.md freezing THIS game's UI constraints per game-ui.md §5 (palette
           token values, font, readability rules, juice budget = trust vs delight, explicit do/don'ts). Then, per
           out/factory/SPEC.md + DESIGN.md, build the playable PWA shell: out/factory/index.html + out/factory/app.js
           (flat-screen router, selection screen, DAILY [UTC date->seed->same level, no backend], ENDLESS, and a HINT
@@ -257,7 +262,8 @@ graph:
           interactive cells carry role+aria-label+aria-pressed and a non-color data-state/glyph; a
           prefers-reduced-motion block exists; a focus-visible style exists; DESIGN.md exists). Then audit for DARK
           PATTERNS (graphs/oracleforge/vendor/agents/ethics-auditor.md) and record out/factory/ETHICS.md (zero
-          unmitigated). On a FAIL retry, fix. End "SHELL: BUILT".
+          unmitigated). On a FAIL retry — or if the upstream is a UX: FAIL or FEEL: WEAK report — address its
+          specific findings (re-juice the motion, fix tokens/a11y/readability, add payoff). End "SHELL: BUILT".
 
     - id: shell_verify
       type: agent
@@ -297,13 +303,33 @@ graph:
       type: loop_counter
       config: { max_iterations: 2 }
 
+    # ---- STAGE 4.6: FEEL REVIEW (the Playability Assessor — game-feel/playability judgment) ----
+    - id: feel_review
+      type: agent
+      config:
+        agentType: feature-dev:code-reviewer
+        role: |
+          Acting as the PLAYABILITY ASSESSOR (see .claude/agents/playability-assessor.md), critique the built
+          web game in out/factory/ for GAME FEEL + PLAYABILITY — read-only, edit nothing. Read app.js, index.html,
+          the tokens/CSS, and docs/grounding/motion-math.md. Judge: responsiveness (input->response latency);
+          impact/payoff (does a tap/toggle/win render LAYERED feedback — easing, volume-preserving squash &
+          stretch, a celebratory win pulse — not just mutate state?); motion juice (flag dead instant/linear
+          changes or missing easing per motion-math.md); clarity (goal/state readable, not color-alone); loop
+          closure (clear win + restart); peak moments; difficulty pacing. Cite code (file:line) per finding.
+          End with EXACTLY "FEEL: OK" if there are no high-severity feel/playability problems, else "FEEL: WEAK"
+          + a prioritized findings list (severity, location, the dead/flat issue, a concrete fix) so shell re-juices.
+
+    - id: feel_gate
+      type: loop_counter
+      config: { max_iterations: 2 }
+
     # ---- STAGE 5: CREATION & SHARING ----
     - id: share
       type: agent
       config:
         effort: high
         role: |
-          STAGE 5 CREATION & SHARING. REAL tools, cwd = repo root. Per out/factory/SPEC.md, add out/factory/codec.js:
+          STAGE 5 CREATION & SHARING. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:share --top-k 4 --query "codec roundtrip / fuzz / migration pitfalls" . Per out/factory/SPEC.md, add out/factory/codec.js:
           a versioned URL codec (encode/decode a level, STRICT decoder, content hash, schemaVersion additive-
           only with a named migration registry) + pure editor reducers (import re-verifies via the solver).
           Add out/factory/codec.test.js: ROUNDTRIP, FUZZ (random/garbled input never throws unhandled), reducer
@@ -328,7 +354,7 @@ graph:
       config:
         effort: high
         role: |
-          STAGE 6 SHIP. REAL tools, cwd = repo root. Per out/factory/SPEC.md, assemble the deliverable: a PWA
+          STAGE 6 SHIP. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:ship --top-k 4 --query "PWA version-sync / service-worker cache / worker smoke pitfalls" . Per out/factory/SPEC.md, assemble the deliverable: a PWA
           service worker out/factory/sw.js (precache-everything, skipWaiting + clients.claim, a VERSION constant)
           and ONE Cloudflare Worker out/factory/worker.js (shape: graphs/oracleforge/vendor/templates/ops/worker.js)
           exporting `default { fetch(request, env) }`: static asset passthrough, POST /api/comment
@@ -393,14 +419,19 @@ graph:
       config:
         effort: low
         role: |
-          You have Bash (cwd = repo root). Distill ONE generalizable FACTORY lesson from this end-to-end build
-          (staged gates, shared-state composition, where autonomy held or broke) and store it:
-          (1) Bash: mkdir -p .runtmp && chmod 700 .runtmp ;
-          (2) Write the lesson to .runtmp/factory_lesson.txt ;
-          (3) Bash: .venv/bin/python tools/mem.py store --namespace lessons:factory --text-file .runtmp/factory_lesson.txt --meta source=factory ;
-          (4) Bash: rm -f .runtmp/factory_lesson.txt .
-          Report the lesson, then end with EXACTLY "PRODUCTION: READY (lesson stored)" so the run's final
-          signal carries the production outcome.
+          You have Bash (cwd = repo root). This step runs ONLY after a fully green build, so every lesson here
+          is VERIFIED. Distill lessons and store each via the secure file pattern — once: Bash
+          `mkdir -p .runtmp && chmod 700 .runtmp`; for each lesson use the Write tool to put it in
+          .runtmp/lesson.txt then `.venv/bin/python tools/mem.py store --namespace <ns> --text-file .runtmp/lesson.txt --meta source=factory`; `rm -f .runtmp/lesson.txt` at the end.
+          (a) ONE cross-cutting FACTORY lesson -> namespace lessons:factory (staged gates / shared-state / where
+              autonomy held or broke).
+          (b) For EACH stage that produced a concrete, GENERALIZABLE, reusable takeaway during THIS build, ONE
+              atomic lesson into that stage's namespace so its next-run recall gets smarter:
+              lessons:ideation (oracle-fit/twist) · lessons:oracle · lessons:foundation · lessons:difficulty ·
+              lessons:content · lessons:shell · lessons:share · lessons:ship. Skip any stage with nothing new;
+              each lesson is ONE reusable sentence, NOT a description of this specific game.
+          Report what you stored per namespace, then end with EXACTLY "PRODUCTION: READY (lesson stored)" so the
+          run's final signal carries the production outcome.
 
     - id: blocked_idea
       type: agent
@@ -464,10 +495,14 @@ graph:
     - { from: shell_verify, to: shl_gate, condition: "default" }
     - { from: shl_gate, to: shell }
     - { from: shl_gate, to: blocked_build, condition: "exhausted" }
-    - { from: ux_audit, to: share, condition: "regex:(^|\\n)UX: PASS\\s*$" }
+    - { from: ux_audit, to: feel_review, condition: "regex:(^|\\n)UX: PASS\\s*$" }
     - { from: ux_audit, to: ux_gate, condition: "default" }
     - { from: ux_gate, to: shell }
     - { from: ux_gate, to: blocked_build, condition: "exhausted" }
+    - { from: feel_review, to: share, condition: "regex:(^|\\n)FEEL: OK\\s*$" }
+    - { from: feel_review, to: feel_gate, condition: "default" }
+    - { from: feel_gate, to: shell }
+    - { from: feel_gate, to: blocked_build, condition: "exhausted" }
     - { from: share, to: share_verify }
     - { from: share_verify, to: ship, condition: "regex:(^|\\n)CODEC: PASS\\s*$" }
     - { from: share_verify, to: shr_gate, condition: "default" }
