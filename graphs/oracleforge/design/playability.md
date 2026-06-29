@@ -110,6 +110,19 @@ the same level for everyone — shareable, fair high-score). Hide generation lat
 level in the background during play + cache + a loading-screen fallback** (never a frozen blank). This makes
 a 14-level pack genuinely endless without sacrificing early-game quality.
 
+## Mastery scoring + a meta-economy (anchor everything to par)
+The factory already proves each level's **par** (solver-minimum moves). Reuse it as the spine of a
+retention loop — no hand-tuned scores, all solver-grounded:
+- **Star rating by efficiency:** par moves → ★★★, par+1 → ★★, par+2 → ★. The placement **budget = par+2**
+  (so the 1★/2★ tiers are reachable — a literal "budget = par" leaves only 3★-or-fail and kills the
+  ladder). Show par as the gold ★★★ target + a live "best stars still achievable" forecast as the player
+  places. Store BEST stars per level; replaying for ★★★ is the long tail.
+- **A meta-economy ties the modes together:** collected stars vs the all-3★ potential is the completion
+  metric; gate a harder mode behind a star threshold (Baffle: the brutal **daily** unlocks at 30 climb
+  stars); give the daily its OWN star currency that converts to a spendable resource (5 daily stars → 1
+  **hint token**, a token reveals a stuck level's solution — capped to ★ so it's for progress, not farming).
+  One mode feeds the next; nothing is a dead end. Every number is derived from the solver, never invented.
+
 ## Not gated here (honest boundary — no silent claims)
 Subjective "fun" is not fully machine-provable. We do NOT claim it. What the factory now DOES enforce:
 the human-cognition-fit critic (Stage 0) rejects provably human-hostile mechanics; this gate enforces the
