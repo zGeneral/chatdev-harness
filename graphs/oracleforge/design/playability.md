@@ -96,6 +96,20 @@ bounded working memory / legible state / fun-early); a `human-unfit` idea is a h
 built. This gate then enforces the **on-ramp floor** above so a human-fit mechanic still ships with a
 gentle entry.
 
+## Endless / infinite replayability (optional mode — generate, don't cap)
+A fixed curated pack tops out; if a game wants an ENDLESS climb (the player's high score = how far
+they reach), generate levels on the fly with the SAME in-browser engine+solver. The hard constraint is
+YIELD: for a thin-manifold mechanic (blunt verbs — Baffle's walls), random **unique-optimal** levels
+have ≈0% yield (measured) and cannot be generated live. The working split:
+- **Curated campaign** keeps the unique-optimal guarantee (the elegant, hand-quality on-ramp).
+- **Endless mode** relaxes to **solvable + par ≥ 2** (a real, non-trivial puzzle; ≈14% yield at 2 movers
+  → fast). Scale difficulty via **board size / entity count / density, NOT higher par** (par-N unique
+  manifolds only get thinner).
+Every generated level stays **solver-verified** (always winnable) and **deterministic by index** (seeded →
+the same level for everyone — shareable, fair high-score). Hide generation latency: **precompute the next
+level in the background during play + cache + a loading-screen fallback** (never a frozen blank). This makes
+a 14-level pack genuinely endless without sacrificing early-game quality.
+
 ## Not gated here (honest boundary — no silent claims)
 Subjective "fun" is not fully machine-provable. We do NOT claim it. What the factory now DOES enforce:
 the human-cognition-fit critic (Stage 0) rejects provably human-hostile mechanics; this gate enforces the
