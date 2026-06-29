@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "name": "baffle",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Baffle — budgeted wall-edit over a fixed turn-rule. Deterministic engine + exact solver.",
+  "scripts": {
+    "test": "node --test",
+    "census": "node census.js"
+  }
+}

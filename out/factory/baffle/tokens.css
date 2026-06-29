@@ -1,0 +1,151 @@
+/* Baffle — design tokens (the ONLY file with hex/raw colour literals).
+ * Frozen from DESIGN.md §2. app.js references var(--…) only; no raw hex there.
+ * Contrast notes are measured ratios (AA text ≥4.5:1, non-text ≥3:1, WCAG 1.4.11). */
+
+:root {
+  /* ── colour (light) — a sunny tide-pool (ART_DIRECTION.md) ── */
+  --bg:        hsl(41 52% 94%);    /* warm sky */
+  --surface:   hsl(39 48% 85%);    /* sand tile */
+  --surface-2: hsl(36 38% 76%);    /* deeper sand (chrome) */
+  --sand-alt:  hsl(38 44% 81%);    /* checker alt tile */
+  --pool:      hsl(190 46% 74%);   /* shallow water under a sink cell */
+  --fg:        hsl(205 38% 17%);   /* 11.9:1 on --surface (AA) */
+  --muted:     hsl(205 18% 37%);   /* 4.7:1 on --surface (AA) */
+  --accent:    hsl(187 70% 28%);   /* AA text 5.2:1 on --surface; white-on-accent 6.0:1 */
+  --on-accent: hsl(45 55% 97%);
+
+  /* the chick (a creature, not an arrow) */
+  --mover:     hsl(17 86% 58%);    /* coral body — test references --mover */
+  --bird:      hsl(17 86% 58%);
+  --bird-2:    hsl(13 74% 47%);    /* body shade / wing */
+  --bird-belly:hsl(40 84% 95%);    /* cream belly */
+  --beak:      hsl(40 96% 53%);    /* golden beak = the heading */
+  --eye:       hsl(205 34% 13%);
+  --foot:      hsl(34 92% 46%);
+
+  /* per-chick palette (c0…c5) — body / outline+wing shade / wake trail. Same game,
+     six little individuals. Each body is outlined in its own shade so it pops on sand. */
+  --bird-0: hsl(17 86% 58%);  --bird-0s: hsl(13 66% 42%);  --wake-0: hsl(17 80% 52% / .42);
+  --bird-1: hsl(184 56% 42%); --bird-1s: hsl(187 60% 28%); --wake-1: hsl(184 56% 40% / .42);
+  --bird-2: hsl(43 88% 52%);  --bird-2s: hsl(36 78% 38%);  --wake-2: hsl(40 82% 46% / .46);
+  --bird-3: hsl(272 46% 62%); --bird-3s: hsl(272 38% 44%); --wake-3: hsl(272 44% 56% / .42);
+  --bird-4: hsl(142 46% 46%); --bird-4s: hsl(144 44% 32%); --wake-4: hsl(142 44% 42% / .42);
+  --bird-5: hsl(335 72% 64%); --bird-5s: hsl(335 52% 46%); --wake-5: hsl(335 64% 58% / .42);
+
+  /* placed groyne = warm driftwood plank */
+  --wall:      hsl(32 72% 52%);    /* honey timber — 3.1:1 vs --surface (non-text) */
+  --wood-2:    hsl(28 64% 40%);    /* grain / shade */
+  --wood-edge: hsl(26 56% 30%);
+
+  /* pre-wall = cool barnacled shore rock (categorically different hue + shape) */
+  --prewall:   hsl(205 20% 40%);   /* slate-blue stone — 3.2:1 vs --surface */
+  --rock-2:    hsl(205 26% 29%);   /* stone shade */
+  --barnacle:  hsl(40 36% 86%);    /* light barnacle dots */
+
+  /* empty placeable edge = a faint "build here" dotted guide (visible, recessed) */
+  --build-hint: hsl(187 44% 40% / .42);
+
+  /* the whirlpool drain */
+  --whirl:     hsl(189 64% 38%);
+  --whirl-2:   hsl(193 78% 60%);
+  --whirl-rim: hsl(43 94% 56%);    /* gold rim */
+
+  --ghost:     hsl(17 76% 50% / .40);   /* the flock's current wake (bird-track tint) */
+  --splash:    hsl(193 84% 72%);
+  --success:   hsl(150 56% 30%);   /* 5.1:1 */
+  --warn:      hsl(8 66% 44%);      /* 4.7:1 */
+  /* two-tone gridline ring — one tone always clears 3:1 (WCAG 1.4.11) */
+  --line-hi:   hsl(43 50% 97%);
+  --line-lo:   hsl(205 26% 26%);
+
+  /* ── type ── */
+  --font: ui-rounded, "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-1: 16px; --fs-2: 18px; --fs-3: 22px; --fs-4: 30px;
+  --lh: 1.5; --lh-h: 1.2;
+
+  /* ── space / radius / elevation ── */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 16px; --sp-4: 24px; --sp-5: 32px; --sp-6: 48px;
+  --r-1: 8px; --r-2: 14px; --r-full: 999px;
+  --shadow-1: 0 1px 0 hsl(210 20% 0% / .08);
+
+  /* ── motion ── */
+  --dur-fast: 90ms; --dur-base: 160ms; --dur-slow: 280ms;
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
+
+  /* ── layout caps (board must never push the affordance below the fold) ── */
+  --tap-min: 44px;
+  --cell-cap: 64px;
+  /* min rendered cell PITCH: the 44px non-scaling tap band + an 8px gap, so
+     adjacent edge hit-strips never overlap (WCAG 2.5.8 target spacing). Boards
+     dense enough to fall below this scroll INSIDE .board-wrap, never the page. */
+  --cell-min: 52px;
+  --board-max: min(92vw, 420px);
+  --fold-reserve: 240px;
+  --board-fit: min(var(--board-max), calc(100dvh - var(--fold-reserve)));
+}
+
+@media (min-height: 760px) { :root { --fold-reserve: 280px; --board-max: min(92vw, 460px); } }
+@media (min-height: 900px) { :root { --board-max: min(92vw, 520px); } }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* a tide-pool after dusk — same creatures, cooler light */
+    --bg:        hsl(205 28% 12%);
+    --surface:   hsl(205 22% 18%);
+    --surface-2: hsl(205 20% 24%);
+    --sand-alt:  hsl(205 20% 21%);
+    --pool:      hsl(192 40% 26%);
+    --fg:        hsl(42 40% 93%);
+    --muted:     hsl(40 12% 68%);
+    --accent:    hsl(188 60% 56%);
+    --on-accent: hsl(205 30% 11%);
+
+    --mover:     hsl(20 88% 62%);
+    --bird:      hsl(20 88% 62%);
+    --bird-2:    hsl(14 72% 50%);
+    --bird-belly:hsl(40 50% 90%);
+    --beak:      hsl(42 92% 58%);
+    --eye:       hsl(205 30% 8%);
+    --foot:      hsl(36 88% 54%);
+
+    --bird-0: hsl(20 88% 62%);  --bird-0s: hsl(14 70% 44%);  --wake-0: hsl(20 82% 58% / .46);
+    --bird-1: hsl(184 58% 56%); --bird-1s: hsl(187 56% 34%); --wake-1: hsl(184 58% 52% / .46);
+    --bird-2: hsl(44 90% 60%);  --bird-2s: hsl(38 78% 42%);  --wake-2: hsl(42 84% 54% / .5);
+    --bird-3: hsl(272 56% 70%); --bird-3s: hsl(272 42% 48%); --wake-3: hsl(272 52% 64% / .46);
+    --bird-4: hsl(142 50% 56%); --bird-4s: hsl(144 46% 36%); --wake-4: hsl(142 48% 50% / .46);
+    --bird-5: hsl(335 78% 70%); --bird-5s: hsl(335 56% 50%); --wake-5: hsl(335 70% 64% / .46);
+
+    --wall:      hsl(33 78% 62%);   /* light driftwood on dark cells (≥3:1) */
+    --wood-2:    hsl(28 60% 46%);
+    --wood-edge: hsl(26 50% 34%);
+
+    --prewall:   hsl(205 18% 58%);
+    --rock-2:    hsl(205 22% 44%);
+    --barnacle:  hsl(40 24% 82%);
+
+    --build-hint: hsl(188 56% 62% / .42);
+
+    --whirl:     hsl(189 56% 52%);
+    --whirl-2:   hsl(193 80% 70%);
+    --whirl-rim: hsl(43 90% 60%);
+
+    --ghost:     hsl(20 80% 60% / .42);
+    --splash:    hsl(193 80% 76%);
+    --success:   hsl(150 52% 56%);
+    --warn:      hsl(8 72% 64%);
+    --line-hi:   hsl(43 40% 86%);
+    --line-lo:   hsl(205 30% 6%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable every non-essential animation; board/units snap to final state,
+   * only opacity cross-fades remain. (DESIGN.md §3 / §4) */
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

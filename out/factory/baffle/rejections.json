@@ -1,0 +1,41 @@
+{
+  "seed": 7,
+  "perGate": {
+    "G1-null-run-win": 405,
+    "contract-G5": 43,
+    "unsolvable": 88,
+    "contract-G4": 121,
+    "contract-G3": 236,
+    "contract-G6": 27,
+    "aborted-parked": 15,
+    "below-min-par": 213
+  },
+  "perInsight": {
+    "handedness": {
+      "wanted": 2,
+      "shipped": 2,
+      "starved": false
+    },
+    "shared": {
+      "wanted": 3,
+      "shipped": 3,
+      "starved": false
+    },
+    "deadend": {
+      "wanted": 3,
+      "shipped": 3,
+      "starved": false
+    },
+    "thecatch": {
+      "wanted": 3,
+      "shipped": 3,
+      "starved": false
+    },
+    "depth": {
+      "wanted": 3,
+      "shipped": 3,
+      "starved": false
+    }
+  },
+  "note": "On starvation the baker ships FEWER (never pads with duplicates); a nonzero duplicate-structure bucket means the canonical-signature dedup rejected isomorphic reskins. All facts are re-derived from the engine in content.test.js."
+}

@@ -1,0 +1,1016 @@
+{
+  "game": "baffle",
+  "seed": 7,
+  "curriculum": [
+    {
+      "id": "handedness",
+      "tier": "T0",
+      "deps": [],
+      "teaches": "the fixed right-hand turn-rule banks a mover — the intuitive front-wall move works (on-ramp)"
+    },
+    {
+      "id": "shared",
+      "tier": "T1",
+      "deps": [
+        "handedness"
+      ],
+      "teaches": "shared deflection — one wall is load-bearing for ≥2 movers (the obvious per-mover line fails)"
+    },
+    {
+      "id": "deadend",
+      "tier": "T2",
+      "deps": [
+        "shared"
+      ],
+      "teaches": "a manufactured dead-end — a player-placed wall reverses a mover for free"
+    },
+    {
+      "id": "thecatch",
+      "tier": "T3",
+      "deps": [
+        "shared",
+        "deadend"
+      ],
+      "teaches": "THE CATCH — the unique line places NO wall in front of any mover; bank beside/behind"
+    },
+    {
+      "id": "depth",
+      "tier": "T2",
+      "deps": [
+        "shared",
+        "deadend"
+      ],
+      "teaches": "DEPTH — the par-ramp peak: the unique optimum needs ≥3 walls (a deeper multi-deflection chain over a denser 3-mover field); difficulty escalates past par-2"
+    }
+  ],
+  "coverage": {
+    "handedness": {
+      "wanted": 2,
+      "shipped": 2,
+      "starved": false
+    },
+    "shared": {
+      "wanted": 3,
+      "shipped": 3,
+      "starved": false
+    },
+    "deadend": {
+      "wanted": 3,
+      "shipped": 3,
+      "starved": false
+    },
+    "thecatch": {
+      "wanted": 3,
+      "shipped": 3,
+      "starved": false
+    },
+    "depth": {
+      "wanted": 3,
+      "shipped": 3,
+      "starved": false
+    }
+  },
+  "levels": [
+    {
+      "id": "handedness-1",
+      "insight": "handedness",
+      "tier": "T0",
+      "level": {
+        "width": 3,
+        "height": 3,
+        "movers": [
+          {
+            "x": 0,
+            "y": 2,
+            "facing": 0
+          }
+        ],
+        "sinks": [
+          [
+            2,
+            0
+          ]
+        ],
+        "prewalls": [
+          "0,0|0,1"
+        ],
+        "k": 2
+      },
+      "par": 1,
+      "solution": [
+        "0,1|0,2"
+      ],
+      "signature": "M0,0@1;S2,2;P1,0|2,0;W0,0|1,0",
+      "certificate": {
+        "insight": "handedness",
+        "tier": "T0",
+        "par": 1,
+        "nodes": 3,
+        "unique": false,
+        "solution": [
+          "0,1|0,2"
+        ],
+        "gateDetail": {
+          "G3": "on-ramp band (T0) — anti-greedy applies from T1 up",
+          "G4": "on-ramp band (T0) — uniqueness exempt (count=5)",
+          "G5": "tier T0: front=true shared=false deadEnd=false catch=false",
+          "G6": "on-ramp par=1 (≤2), 1 load-bearing wall(s)",
+          "G7": "5 frames, monotone delivery, all 1 movers delivered",
+          "G8": "on-ramp band (T0) — magnitude-floor exempt, par=1, deflection load-bearing"
+        },
+        "traceHash": "8b2389cd"
+      }
+    },
+    {
+      "id": "handedness-2",
+      "insight": "handedness",
+      "tier": "T0",
+      "level": {
+        "width": 4,
+        "height": 3,
+        "movers": [
+          {
+            "x": 2,
+            "y": 0,
+            "facing": 1
+          }
+        ],
+        "sinks": [
+          [
+            1,
+            1
+          ]
+        ],
+        "prewalls": [
+          "0,2|1,2",
+          "1,0|1,1",
+          "2,2|3,2"
+        ],
+        "k": 2
+      },
+      "par": 1,
+      "solution": [
+        "0,1|0,2"
+      ],
+      "signature": "M0,1@0;S1,2;P0,2|1,2;P2,0|2,1;P2,2|2,3;W1,3|2,3",
+      "certificate": {
+        "insight": "handedness",
+        "tier": "T0",
+        "par": 1,
+        "nodes": 5,
+        "unique": false,
+        "solution": [
+          "0,1|0,2"
+        ],
+        "gateDetail": {
+          "G3": "on-ramp band (T0) — anti-greedy applies from T1 up",
+          "G4": "on-ramp band (T0) — uniqueness exempt (count=4)",
+          "G5": "tier T0: front=false shared=false deadEnd=false catch=true",
+          "G6": "on-ramp par=1 (≤2), 1 load-bearing wall(s)",
+          "G7": "11 frames, monotone delivery, all 1 movers delivered",
+          "G8": "on-ramp band (T0) — magnitude-floor exempt, par=1, deflection load-bearing"
+        },
+        "traceHash": "31976daf"
+      }
+    },
+    {
+      "id": "shared-1",
+      "insight": "shared",
+      "tier": "T1",
+      "level": {
+        "width": 4,
+        "height": 4,
+        "movers": [
+          {
+            "x": 3,
+            "y": 1,
+            "facing": 1
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "facing": 3
+          }
+        ],
+        "sinks": [
+          [
+            1,
+            0
+          ]
+        ],
+        "prewalls": [
+          "0,0|1,0",
+          "0,1|0,2",
+          "2,0|2,1",
+          "2,0|3,0",
+          "3,2|3,3"
+        ],
+        "k": 4
+      },
+      "par": 2,
+      "solution": [
+        "0,2|1,2",
+        "2,3|3,3"
+      ],
+      "signature": "M0,1@3;M3,2@1;S1,3;P0,1|0,2;P0,3|1,3;P2,2|2,3;P2,3|3,3;P3,0|3,1;W0,1|1,1;W2,0|3,0",
+      "certificate": {
+        "insight": "shared",
+        "tier": "T1",
+        "par": 2,
+        "nodes": 40,
+        "unique": true,
+        "solution": [
+          "0,2|1,2",
+          "2,3|3,3"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=2",
+          "G5": "tier T1: front=false shared=true deadEnd=false catch=true",
+          "G6": "par=2≤k=4, 2 load-bearing walls",
+          "G7": "12 frames, monotone delivery, all 2 movers delivered",
+          "G8": "floor cleared: nodes=40≥16, deflection load-bearing, area=16, movers=2, par=2"
+        },
+        "traceHash": "ff721157"
+      }
+    },
+    {
+      "id": "shared-2",
+      "insight": "shared",
+      "tier": "T1",
+      "level": {
+        "width": 5,
+        "height": 5,
+        "movers": [
+          {
+            "x": 3,
+            "y": 4,
+            "facing": 0
+          },
+          {
+            "x": 2,
+            "y": 1,
+            "facing": 0
+          }
+        ],
+        "sinks": [
+          [
+            2,
+            4
+          ]
+        ],
+        "prewalls": [
+          "0,2|1,2",
+          "0,3|0,4",
+          "0,3|1,3",
+          "1,1|1,2",
+          "2,0|2,1",
+          "2,4|3,4",
+          "3,0|4,0",
+          "3,1|3,2",
+          "3,2|3,3",
+          "3,4|4,4"
+        ],
+        "k": 4
+      },
+      "par": 2,
+      "solution": [
+        "4,2|4,3",
+        "1,3|2,3"
+      ],
+      "signature": "M0,1@1;M3,2@1;S0,2;P0,0|0,1;P0,1|0,2;P0,4|1,4;P1,1|2,1;P1,3|1,4;P2,1|3,1;P2,3|2,4;P2,3|3,3;P3,2|4,2;P4,0|4,1;W1,0|2,0;W1,2|1,3",
+      "certificate": {
+        "insight": "shared",
+        "tier": "T1",
+        "par": 2,
+        "nodes": 143,
+        "unique": true,
+        "solution": [
+          "4,2|4,3",
+          "1,3|2,3"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=2",
+          "G5": "tier T1: front=false shared=true deadEnd=true catch=true",
+          "G6": "par=2≤k=4, 2 load-bearing walls",
+          "G7": "20 frames, monotone delivery, all 2 movers delivered",
+          "G8": "floor cleared: nodes=143≥16, deflection load-bearing, area=25, movers=2, par=2"
+        },
+        "traceHash": "f9129732"
+      }
+    },
+    {
+      "id": "shared-3",
+      "insight": "shared",
+      "tier": "T1",
+      "level": {
+        "width": 4,
+        "height": 4,
+        "movers": [
+          {
+            "x": 2,
+            "y": 0,
+            "facing": 1
+          },
+          {
+            "x": 3,
+            "y": 1,
+            "facing": 2
+          }
+        ],
+        "sinks": [
+          [
+            3,
+            3
+          ]
+        ],
+        "prewalls": [
+          "0,0|0,1",
+          "0,1|1,1",
+          "0,2|0,3",
+          "2,2|3,2",
+          "3,2|3,3"
+        ],
+        "k": 4
+      },
+      "par": 2,
+      "solution": [
+        "2,0|3,0",
+        "3,0|3,1"
+      ],
+      "signature": "M0,1@0;M1,0@1;S3,0;P0,3|1,3;P1,2|1,3;P2,0|2,1;P2,0|3,0;P2,3|3,3;W0,0|0,1;W0,0|1,0",
+      "certificate": {
+        "insight": "shared",
+        "tier": "T1",
+        "par": 2,
+        "nodes": 31,
+        "unique": true,
+        "solution": [
+          "2,0|3,0",
+          "3,0|3,1"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=2",
+          "G5": "tier T1: front=true shared=true deadEnd=true catch=false",
+          "G6": "par=2≤k=4, 2 load-bearing walls",
+          "G7": "15 frames, monotone delivery, all 2 movers delivered",
+          "G8": "floor cleared: nodes=31≥16, deflection load-bearing, area=16, movers=2, par=2"
+        },
+        "traceHash": "106d0cec"
+      }
+    },
+    {
+      "id": "deadend-1",
+      "insight": "deadend",
+      "tier": "T2",
+      "level": {
+        "width": 4,
+        "height": 5,
+        "movers": [
+          {
+            "x": 0,
+            "y": 1,
+            "facing": 2
+          },
+          {
+            "x": 2,
+            "y": 3,
+            "facing": 0
+          }
+        ],
+        "sinks": [
+          [
+            1,
+            3
+          ]
+        ],
+        "prewalls": [
+          "0,1|0,2",
+          "0,1|1,1",
+          "0,2|1,2",
+          "2,0|2,1",
+          "2,1|3,1",
+          "2,3|2,4",
+          "3,0|3,1"
+        ],
+        "k": 4
+      },
+      "par": 2,
+      "solution": [
+        "1,0|2,0",
+        "1,1|2,1"
+      ],
+      "signature": "M0,1@2;M2,3@0;S1,3;P0,1|0,2;P0,1|1,1;P0,2|1,2;P2,0|2,1;P2,1|3,1;P2,3|2,4;P3,0|3,1;W1,0|2,0;W1,1|2,1",
+      "certificate": {
+        "insight": "deadend",
+        "tier": "T2",
+        "par": 2,
+        "nodes": 50,
+        "unique": true,
+        "solution": [
+          "1,0|2,0",
+          "1,1|2,1"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=2",
+          "G5": "tier T2: front=false shared=true deadEnd=true catch=true",
+          "G6": "par=2≤k=4, 2 load-bearing walls",
+          "G7": "6 frames, monotone delivery, all 2 movers delivered",
+          "G8": "floor cleared: nodes=50≥16, deflection load-bearing, area=20, movers=2, par=2"
+        },
+        "traceHash": "10cae494"
+      }
+    },
+    {
+      "id": "deadend-2",
+      "insight": "deadend",
+      "tier": "T2",
+      "level": {
+        "width": 4,
+        "height": 6,
+        "movers": [
+          {
+            "x": 3,
+            "y": 2,
+            "facing": 0
+          },
+          {
+            "x": 0,
+            "y": 3,
+            "facing": 2
+          }
+        ],
+        "sinks": [
+          [
+            0,
+            1
+          ]
+        ],
+        "prewalls": [
+          "0,1|0,2",
+          "0,4|0,5",
+          "1,1|2,1",
+          "1,3|1,4",
+          "1,5|2,5",
+          "2,0|3,0",
+          "2,1|3,1",
+          "2,2|3,2",
+          "2,3|3,3",
+          "2,5|3,5",
+          "3,0|3,1",
+          "3,1|3,2"
+        ],
+        "k": 4
+      },
+      "par": 2,
+      "solution": [
+        "1,4|2,4",
+        "3,4|3,5"
+      ],
+      "signature": "M0,2@0;M3,3@2;S0,4;P0,0|0,1;P0,3|0,4;P1,0|2,0;P1,1|1,2;P1,4|2,4;P2,0|3,0;P2,2|3,2;P2,3|3,3;P2,4|3,4;P2,5|3,5;P3,3|3,4;P3,4|3,5;W1,1|2,1;W3,0|3,1",
+      "certificate": {
+        "insight": "deadend",
+        "tier": "T2",
+        "par": 2,
+        "nodes": 107,
+        "unique": true,
+        "solution": [
+          "1,4|2,4",
+          "3,4|3,5"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=2",
+          "G5": "tier T2: front=false shared=true deadEnd=true catch=true",
+          "G6": "par=2≤k=4, 2 load-bearing walls",
+          "G7": "23 frames, monotone delivery, all 2 movers delivered",
+          "G8": "floor cleared: nodes=107≥16, deflection load-bearing, area=24, movers=2, par=2"
+        },
+        "traceHash": "a14f62ae"
+      }
+    },
+    {
+      "id": "deadend-3",
+      "insight": "deadend",
+      "tier": "T2",
+      "level": {
+        "width": 6,
+        "height": 6,
+        "movers": [
+          {
+            "x": 3,
+            "y": 4,
+            "facing": 0
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "facing": 3
+          }
+        ],
+        "sinks": [
+          [
+            2,
+            3
+          ]
+        ],
+        "prewalls": [
+          "0,0|0,1",
+          "0,0|1,0",
+          "0,5|1,5",
+          "1,0|1,1",
+          "1,2|1,3",
+          "1,2|2,2",
+          "1,3|2,3",
+          "2,0|2,1",
+          "2,3|3,3",
+          "2,4|3,4",
+          "3,1|3,2",
+          "3,5|4,5",
+          "4,1|5,1",
+          "4,2|5,2",
+          "4,3|5,3",
+          "5,0|5,1"
+        ],
+        "k": 4
+      },
+      "par": 2,
+      "solution": [
+        "2,1|3,1",
+        "4,1|4,2"
+      ],
+      "signature": "M0,1@3;M3,4@0;S2,3;P0,0|0,1;P0,0|1,0;P0,5|1,5;P1,0|1,1;P1,2|1,3;P1,2|2,2;P1,3|2,3;P2,0|2,1;P2,3|3,3;P2,4|3,4;P3,1|3,2;P3,5|4,5;P4,1|5,1;P4,2|5,2;P4,3|5,3;P5,0|5,1;W2,1|3,1;W4,1|4,2",
+      "certificate": {
+        "insight": "deadend",
+        "tier": "T2",
+        "par": 2,
+        "nodes": 367,
+        "unique": true,
+        "solution": [
+          "2,1|3,1",
+          "4,1|4,2"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=2",
+          "G5": "tier T2: front=false shared=true deadEnd=true catch=true",
+          "G6": "par=2≤k=4, 2 load-bearing walls",
+          "G7": "37 frames, monotone delivery, all 2 movers delivered",
+          "G8": "floor cleared: nodes=367≥16, deflection load-bearing, area=36, movers=2, par=2"
+        },
+        "traceHash": "3c012c2d"
+      }
+    },
+    {
+      "id": "thecatch-1",
+      "insight": "thecatch",
+      "tier": "T3",
+      "level": {
+        "width": 5,
+        "height": 4,
+        "movers": [
+          {
+            "x": 4,
+            "y": 0,
+            "facing": 0
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "facing": 2
+          }
+        ],
+        "sinks": [
+          [
+            1,
+            1
+          ]
+        ],
+        "prewalls": [
+          "0,0|0,1",
+          "0,0|1,0",
+          "0,1|1,1",
+          "1,1|1,2",
+          "2,1|2,2",
+          "2,3|3,3",
+          "3,0|4,0",
+          "3,2|3,3",
+          "4,2|4,3"
+        ],
+        "k": 5
+      },
+      "par": 2,
+      "solution": [
+        "3,2|4,2",
+        "4,1|4,2"
+      ],
+      "signature": "M0,0@0;M4,2@2;S3,1;P0,0|1,0;P0,2|0,3;P1,2|1,3;P1,3|2,3;P2,1|2,2;P3,0|4,0;P3,1|3,2;P3,1|4,1;P4,0|4,1;W0,1|0,2;W0,2|1,2",
+      "certificate": {
+        "insight": "thecatch",
+        "tier": "T3",
+        "par": 2,
+        "nodes": 122,
+        "unique": true,
+        "solution": [
+          "3,2|4,2",
+          "4,1|4,2"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=2",
+          "G5": "tier T3: front=false shared=false deadEnd=false catch=true",
+          "G6": "par=2≤k=5, 2 load-bearing walls",
+          "G7": "11 frames, monotone delivery, all 2 movers delivered",
+          "G8": "floor cleared: nodes=122≥16, deflection load-bearing, area=20, movers=2, par=2"
+        },
+        "traceHash": "93a9a56d"
+      }
+    },
+    {
+      "id": "thecatch-2",
+      "insight": "thecatch",
+      "tier": "T3",
+      "level": {
+        "width": 6,
+        "height": 5,
+        "movers": [
+          {
+            "x": 1,
+            "y": 4,
+            "facing": 3
+          },
+          {
+            "x": 2,
+            "y": 2,
+            "facing": 1
+          }
+        ],
+        "sinks": [
+          [
+            3,
+            3
+          ]
+        ],
+        "prewalls": [
+          "0,1|0,2",
+          "0,2|0,3",
+          "0,2|1,2",
+          "1,1|1,2",
+          "1,1|2,1",
+          "1,3|1,4",
+          "2,2|3,2",
+          "2,3|2,4",
+          "2,3|3,3",
+          "4,3|5,3",
+          "4,4|5,4"
+        ],
+        "k": 5
+      },
+      "par": 2,
+      "solution": [
+        "1,3|2,3",
+        "3,0|4,0"
+      ],
+      "signature": "M0,1@0;M2,2@2;S1,3;P0,1|1,1;P0,2|1,2;P0,4|0,5;P1,0|2,0;P1,2|1,3;P1,4|1,5;P2,0|2,1;P2,0|3,0;P2,1|3,1;P2,2|2,3;P3,1|3,2;W1,1|1,2;W4,3|4,4",
+      "certificate": {
+        "insight": "thecatch",
+        "tier": "T3",
+        "par": 2,
+        "nodes": 129,
+        "unique": true,
+        "solution": [
+          "1,3|2,3",
+          "3,0|4,0"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=2",
+          "G5": "tier T3: front=false shared=true deadEnd=true catch=true",
+          "G6": "par=2≤k=5, 2 load-bearing walls",
+          "G7": "14 frames, monotone delivery, all 2 movers delivered",
+          "G8": "floor cleared: nodes=129≥16, deflection load-bearing, area=30, movers=2, par=2"
+        },
+        "traceHash": "f8c75ed2"
+      }
+    },
+    {
+      "id": "thecatch-3",
+      "insight": "thecatch",
+      "tier": "T3",
+      "level": {
+        "width": 6,
+        "height": 5,
+        "movers": [
+          {
+            "x": 1,
+            "y": 2,
+            "facing": 1
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "facing": 3
+          }
+        ],
+        "sinks": [
+          [
+            3,
+            0
+          ]
+        ],
+        "prewalls": [
+          "0,0|1,0",
+          "0,1|0,2",
+          "0,2|0,3",
+          "0,3|1,3",
+          "1,0|2,0",
+          "2,2|2,3",
+          "3,0|3,1",
+          "3,0|4,0",
+          "3,2|4,2",
+          "3,3|3,4",
+          "4,4|5,4",
+          "5,2|5,3"
+        ],
+        "k": 5
+      },
+      "par": 2,
+      "solution": [
+        "2,1|3,1",
+        "2,2|3,2"
+      ],
+      "signature": "M0,1@3;M1,2@1;S3,0;P0,0|1,0;P0,1|0,2;P0,2|0,3;P0,3|1,3;P1,0|2,0;P2,2|2,3;P3,0|3,1;P3,0|4,0;P3,2|4,2;P3,3|3,4;P4,4|5,4;P5,2|5,3;W2,1|3,1;W2,2|3,2",
+      "certificate": {
+        "insight": "thecatch",
+        "tier": "T3",
+        "par": 2,
+        "nodes": 430,
+        "unique": true,
+        "solution": [
+          "2,1|3,1",
+          "2,2|3,2"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=2",
+          "G5": "tier T3: front=false shared=true deadEnd=false catch=true",
+          "G6": "par=2≤k=5, 2 load-bearing walls",
+          "G7": "13 frames, monotone delivery, all 2 movers delivered",
+          "G8": "floor cleared: nodes=430≥16, deflection load-bearing, area=30, movers=2, par=2"
+        },
+        "traceHash": "d5cebc0e"
+      }
+    },
+    {
+      "id": "depth-1",
+      "insight": "depth",
+      "tier": "T2",
+      "level": {
+        "width": 7,
+        "height": 6,
+        "movers": [
+          {
+            "x": 6,
+            "y": 5,
+            "facing": 3
+          },
+          {
+            "x": 5,
+            "y": 5,
+            "facing": 1
+          },
+          {
+            "x": 1,
+            "y": 5,
+            "facing": 2
+          }
+        ],
+        "sinks": [
+          [
+            3,
+            2
+          ]
+        ],
+        "prewalls": [
+          "0,2|1,2",
+          "0,5|1,5",
+          "1,1|2,1",
+          "1,4|2,4",
+          "2,3|3,3",
+          "2,5|3,5",
+          "3,3|3,4",
+          "3,4|4,4",
+          "3,5|4,5",
+          "4,1|4,2",
+          "4,5|5,5",
+          "5,3|6,3",
+          "6,1|6,2",
+          "6,2|6,3"
+        ],
+        "k": 6
+      },
+      "par": 3,
+      "solution": [
+        "5,5|6,5",
+        "3,0|4,0",
+        "6,3|6,4"
+      ],
+      "signature": "M0,0@1;M1,0@3;M5,0@0;S3,3;P0,2|0,3;P0,2|1,2;P0,3|0,4;P1,0|2,0;P2,0|3,0;P2,1|3,1;P2,3|2,4;P3,0|4,0;P3,1|3,2;P3,2|4,2;P4,1|5,1;P4,4|5,4;P5,0|6,0;P5,3|6,3;W0,0|1,0;W0,1|0,2;W2,5|3,5",
+      "certificate": {
+        "insight": "depth",
+        "tier": "T2",
+        "par": 3,
+        "nodes": 572,
+        "unique": true,
+        "solution": [
+          "5,5|6,5",
+          "3,0|4,0",
+          "6,3|6,4"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=3",
+          "G5": "tier T2: front=true shared=true deadEnd=true catch=false",
+          "G6": "par=3≤k=6, 3 load-bearing walls",
+          "G7": "16 frames, monotone delivery, all 3 movers delivered",
+          "G8": "floor cleared: nodes=572≥16, deflection load-bearing, area=42, movers=3, par=3"
+        },
+        "traceHash": "9353c942"
+      }
+    },
+    {
+      "id": "depth-2",
+      "insight": "depth",
+      "tier": "T2",
+      "level": {
+        "width": 7,
+        "height": 7,
+        "movers": [
+          {
+            "x": 1,
+            "y": 4,
+            "facing": 1
+          },
+          {
+            "x": 4,
+            "y": 5,
+            "facing": 1
+          },
+          {
+            "x": 6,
+            "y": 5,
+            "facing": 3
+          }
+        ],
+        "sinks": [
+          [
+            0,
+            5
+          ]
+        ],
+        "prewalls": [
+          "0,0|1,0",
+          "0,2|0,3",
+          "0,2|1,2",
+          "0,4|1,4",
+          "0,5|0,6",
+          "0,5|1,5",
+          "0,6|1,6",
+          "1,3|1,4",
+          "1,4|1,5",
+          "2,1|2,2",
+          "2,3|2,4",
+          "2,5|2,6",
+          "3,5|3,6",
+          "4,0|5,0",
+          "4,2|4,3",
+          "4,4|4,5",
+          "4,4|5,4",
+          "5,1|6,1",
+          "5,2|6,2",
+          "5,3|6,3",
+          "5,4|5,5",
+          "5,5|5,6",
+          "6,2|6,3",
+          "6,3|6,4",
+          "6,4|6,5"
+        ],
+        "k": 6
+      },
+      "par": 3,
+      "solution": [
+        "4,5|5,5",
+        "2,5|3,5",
+        "4,3|5,3"
+      ],
+      "signature": "M0,1@1;M2,1@3;M5,2@3;S6,1;P0,1|0,2;P0,2|0,3;P0,3|0,4;P0,3|1,3;P0,4|1,4;P0,5|1,5;P1,0|1,1;P1,1|1,2;P1,2|2,2;P1,6|2,6;P2,1|2,2;P2,3|2,4;P3,0|3,1;P4,0|4,1;P4,2|4,3;P4,4|4,5;P5,0|6,0;P5,1|5,2;P5,1|6,1;P5,2|5,3;P5,2|6,2;P5,4|6,4;P5,6|6,6;P6,0|6,1;P6,3|6,4;W1,1|2,1;W1,3|2,3;W3,1|4,1",
+      "certificate": {
+        "insight": "depth",
+        "tier": "T2",
+        "par": 3,
+        "nodes": 306,
+        "unique": true,
+        "solution": [
+          "4,5|5,5",
+          "2,5|3,5",
+          "4,3|5,3"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=3",
+          "G5": "tier T2: front=true shared=true deadEnd=true catch=false",
+          "G6": "par=3≤k=6, 3 load-bearing walls",
+          "G7": "21 frames, monotone delivery, all 3 movers delivered",
+          "G8": "floor cleared: nodes=306≥16, deflection load-bearing, area=49, movers=3, par=3"
+        },
+        "traceHash": "83ffa5c8"
+      }
+    },
+    {
+      "id": "depth-3",
+      "insight": "depth",
+      "tier": "T2",
+      "level": {
+        "width": 8,
+        "height": 6,
+        "movers": [
+          {
+            "x": 7,
+            "y": 5,
+            "facing": 3
+          },
+          {
+            "x": 2,
+            "y": 0,
+            "facing": 0
+          },
+          {
+            "x": 4,
+            "y": 0,
+            "facing": 2
+          }
+        ],
+        "sinks": [
+          [
+            7,
+            0
+          ]
+        ],
+        "prewalls": [
+          "0,0|1,0",
+          "0,1|0,2",
+          "0,3|1,3",
+          "1,0|1,1",
+          "2,0|2,1",
+          "2,2|2,3",
+          "2,3|3,3",
+          "3,0|4,0",
+          "3,5|4,5",
+          "4,0|5,0",
+          "4,1|4,2",
+          "4,2|4,3",
+          "4,2|5,2",
+          "4,4|4,5",
+          "5,1|6,1",
+          "5,3|5,4",
+          "6,0|6,1",
+          "6,0|7,0",
+          "6,1|7,1",
+          "7,4|7,5"
+        ],
+        "k": 6
+      },
+      "par": 3,
+      "solution": [
+        "3,1|4,1",
+        "0,3|0,4",
+        "4,5|5,5"
+      ],
+      "signature": "M0,0@1;M3,5@0;M5,5@2;S0,5;P0,0|0,1;P0,4|1,4;P0,5|1,5;P1,4|1,5;P1,4|2,4;P2,1|2,2;P2,3|3,3;P2,5|3,5;P3,0|3,1;P3,0|4,0;P3,2|3,3;P3,3|3,4;P3,5|4,5;P4,2|5,2;P5,2|5,3;P5,4|5,5;P6,2|7,2;P6,4|6,5;P6,5|7,5;P7,3|7,4;W2,0|3,0;W3,4|4,4;W7,1|7,2",
+      "certificate": {
+        "insight": "depth",
+        "tier": "T2",
+        "par": 3,
+        "nodes": 1993,
+        "unique": true,
+        "solution": [
+          "3,1|4,1",
+          "0,3|0,4",
+          "4,5|5,5"
+        ],
+        "gateDetail": {
+          "G3": "greedy per-mover walling loses (the obvious line must not win)",
+          "G4": "unique optimal at par=3",
+          "G5": "tier T2: front=false shared=true deadEnd=true catch=true",
+          "G6": "par=3≤k=6, 3 load-bearing walls",
+          "G7": "34 frames, monotone delivery, all 3 movers delivered",
+          "G8": "floor cleared: nodes=1993≥16, deflection load-bearing, area=48, movers=3, par=3"
+        },
+        "traceHash": "4fef7fca"
+      }
+    }
+  ]
+}

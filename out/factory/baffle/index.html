@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#cfe8e6" />
+  <meta name="description" content="Baffle — sculpt a maze of driftwood groynes; the fixed right-hand turn-rule banks the flock into the drain. A deterministic, exactly-solvable puzzle." />
+  <title>Baffle — bank the flock</title>
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to game</a>
+  <div id="app">
+    <header class="brand">
+      <h1>Baffle</h1>
+      <span class="tag">bank the flock</span>
+      <button id="mute" class="mute-btn" type="button" aria-pressed="false" aria-label="Mute sound" title="Mute / unmute sound">🔊</button>
+    </header>
+    <main id="main" tabindex="-1" aria-live="polite">
+      <!-- the flat-screen router renders here -->
+    </main>
+    <footer>
+      No accounts, no ads, no payments. Your progress stays on this device.
+      <a href="#/select">Home</a>
+    </footer>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  // Baffle — static PWA published as a Cloudflare Workers Static-Assets site.
+  // No server logic: the game is fully client-side (hash routing, localStorage
+  // progress). `wrangler deploy` serves ./dist at https://baffle.<subdomain>.workers.dev
+  "name": "baffle",
+  "compatibility_date": "2026-06-29",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
