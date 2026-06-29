@@ -45,6 +45,11 @@ always gated behind `prefers-reduced-motion`.
 - **High contrast.** Foreground/background ≥ WCAG AA (4.5:1 text, 3:1 UI). Threats/targets read instantly.
 - **Telegraph every state change.** A tap's effect is shown, not just applied (a brief highlight on the
   toggled cells); the win is unmistakable.
+- **Show key events DIEGETICALLY, not as a status flag.** A collision / failure / score / power-up is a
+  moment — render it in-world (a cartoon impact starburst at the crash point, feathers/particles, a board
+  recoil, the actors reeling), not merely a text banner saying "collision". The result line still appears,
+  but the *event* is felt on the board. Make it artist-cute, on-theme, and keep one persistent mark (e.g. the
+  burst star) so it still reads with reduced-motion. "Print a flag" is the engineer's tell; show the bonk.
 - **Legible small.** Works at phone size: large tap targets (≥44px), no tiny text, generous spacing.
 - **SVG tap targets are measured in RENDERED px, not authoring units.** If the board is an `<svg>` whose
   `viewBox` is CSS-scaled to fit, a hit `stroke-width="44"` is **44 user-units** that shrink to `44 × board
