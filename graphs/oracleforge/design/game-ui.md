@@ -91,6 +91,15 @@ Apply the principles that suit a calm puzzle; skip the loud ones. Concrete mappi
   mechanics (the solver doesn't care), it's room to add life: give N identical movers distinct colours / small
   form variations / their own coloured trails so they read as individuals, not clones. Cosmetic variety is a
   cheap, high-impact win the "engineer" instinct leaves on the table.
+- **Drive animation clocks by ACCUMULATED CLAMPED deltas, not `(now - startTime)` (the "frozen animation" trap).**
+  If the loop computes progress as `(now - t0) / total`, a main-thread BLOCK (e.g. generating the next level
+  synchronously) or a throttled/backgrounded tab makes `now` jump forward by seconds → `progress` leaps to 1
+  → the whole animation SNAPS to its end state with nothing ever moving (the simulation "ran in the
+  background while the animation froze"). Instead accumulate `elapsed += min(now - prev, ~64ms)` each frame:
+  a stall merely PAUSES the animation and it resumes smoothly. Also wrap the per-frame body in try/catch (a
+  throwing frame must not kill the loop) and run heavy background work via `requestIdleCallback`, never on the
+  path of a running animation. (Polish, same area: synthesize SFX with the Web Audio API — no asset files,
+  offline — for the core events, behind a persistent, persisted MUTE toggle.)
 - **Never gate the UI-unlock solely on the animation loop completing (the "frozen buttons" trap).**
   `requestAnimationFrame` is PAUSED while the tab is backgrounded/occluded (and can stall). A
   "lock the controls → animate → re-enable in the rAF callback" pattern therefore freezes the toolbar
