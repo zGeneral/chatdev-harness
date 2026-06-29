@@ -28,8 +28,25 @@ matrix, then **DOM/CSS-measures** computable checks — no subjective scoring. F
   selected/active borders, and any glyph/shape state-marker (the non-color encoding from the color-
   independence check must itself clear 3:1, not merely exist). A board whose pieces or focus ring are
   technically-distinct-but-too-faint fails here even if all text passes.
-- **Touch targets:** every interactive element's `getBoundingClientRect()` ≥ 44×44px, with ≥8px gaps.
-- **No horizontal scroll:** `document.scrollingElement.scrollWidth ≤ clientWidth` at every viewport.
+- **Every control must actually RECEIVE the click — verify hit-testing, not just size.** A button can be the
+  right size, visible, and styled, yet be completely dead because something sits on top of it or it has
+  `pointer-events:none`. For each interactive control, assert `document.elementFromPoint(center)` returns that
+  control (or a descendant) — i.e. it is the topmost hit target. A classic cause: a decorative SVG class name
+  collides with a UI class (Baffle styled its flock wake `.ghost { pointer-events:none }`, which also matched
+  the `.btn.ghost` Hint/Menu buttons and made them unclickable — sized correctly, but dead). Size + contrast
+  checks will NOT catch this; the elementFromPoint check is the one that does.
+- **Touch targets:** every interactive element renders ≥ 44×44px on screen, with ≥8px gaps. **Measure the
+  real HIT area, not the box.** `getBoundingClientRect()` returns a **zero-thickness** box for an SVG
+  `<line>`/stroke (it ignores the stroke), and `getScreenCTM()` does **not** account for a scrolled board
+  container — both silently mis-report. For SVG hit strokes, probe the actual hittable band with
+  `document.elementFromPoint()` stepping perpendicular from the element's midpoint, and derive that midpoint
+  from `svg.getBoundingClientRect()` (which reflects scroll) — or `scrollIntoView({block:'center',
+  inline:'center'})` each element first. A hit band whose `stroke-width` is in **viewBox units** shrinks with
+  board scale (sub-44px); the fix is `vector-effect:non-scaling-stroke` + a floored cell pitch (see
+  `game-ui.md`). Baffle's audit caught this; the naive `getBoundingClientRect` check would have missed it.
+- **No horizontal scroll:** `document.scrollingElement.scrollWidth ≤ clientWidth` at every viewport. This is a
+  **PAGE-level** gate — an internal `overflow-x:auto` board container that pans a dense board is allowed and
+  expected (it is how a board too wide for the viewport keeps ≥44px tap targets without scrolling the page).
 - **Interaction-state matrix:** the DOM demonstrably handles each of: invalid move · undo/redo · solved ·
   unsolvable/stuck · share-link-loaded · reduced-motion (drive each via `browser_evaluate`/clicks and assert
   the resulting DOM state).
@@ -57,6 +74,11 @@ shows. Any fail ⇒ UX: FAIL → back to shell.
 - **Genre / identity legible** (the AI-SLOP genre-swap, strengthened): with all text labels hidden, the
   rendered board/pieces must still read as **a specific game with its own visual identity**, not a generic
   gray grid that could be any app. A characterless default grid ⇒ FAIL.
+- **Progression flow — no dead-end:** actually DRIVE a level to a WIN (use the hint ladder / certified
+  solution), and confirm the win state renders a working **Next-level** affordance that opens a *different*
+  next level — in the curriculum AND in endless. A win screen offering only "back to menu" ⇒ FAIL. Do not
+  trust a passing unit test of a same-level "advance-turn" helper — verify the real next-LEVEL transition in
+  the rendered DOM (Enfilade shipped this exact dead-end).
 
 ## HIGH (flag; fix expected)
 - Tutorial-bloat: first-screen + first-level non-skippable text ≤ 100 words (fail if > 100 or > 60% of text).

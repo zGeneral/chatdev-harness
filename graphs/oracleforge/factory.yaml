@@ -191,7 +191,12 @@ graph:
           STAGE 2 DIFFICULTY CONTRACT. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:difficulty --top-k 4 --query "anti-greedy / uniqueness / technique-tier contract pitfalls" . Per {{OUT}}/SPEC.md, add {{OUT}}/
           contract.js: 6-10 computable gates over (level, solution, frames) — default-outcome, structural
           minimums, ANTI-GREEDY (the obvious line must not win), UNIQUENESS, a technique-tier ladder, sequence
-          shape, failure legibility. Add {{OUT}}/contract.test.js with a STARTER band (passes all gates) and
+          shape, failure legibility, an ABSOLUTE-DIFFICULTY FLOOR (the HARD tier must NOT be eyeball-trivial —
+          gate a computable decision-space / solver-search-node proxy PLUS board/entity/turn magnitude so a
+          flat field of tiny par-1 rooms can NEVER certify as the hard tier), and VERBS-LOAD-BEARING (every
+          core verb the SPEC defines must MATTER in the certified solution — e.g. if movement is a SPEC verb,
+          a mid+ room where units cannot/need not move is REJECTED; no vestigial mechanics). Add
+          {{OUT}}/contract.test.js with a STARTER band (passes all gates) and
           SOFT fixtures (each must be REJECTED by the gate it targets). On a FAIL retry, fix the cause. End
           "CONTRACT: BUILT".
 
@@ -217,12 +222,22 @@ graph:
           STAGE 3 CONTENT ENGINE. REAL tools, cwd = repo root. FIRST recall+apply lessons (Bash; tolerate no-memory): .venv/bin/python tools/mem.py search --namespace lessons:content --top-k 4 --query "generate-and-test / curriculum coverage / generator-starvation pitfalls" . Per {{OUT}}/SPEC.md, add {{OUT}}/baker.js: a
           curriculum graph (insights + dependencies) and a SOLVER-GATED generate-and-test baker that accepts a
           level iff the solver proves it solvable, unique-optimal per contract, AND it teaches its assigned
-          insight (revelation certificate). Run the baker to write {{OUT}}/pack.json (every insight covered)
-          and {{OUT}}/rejections.json (per-gate census). Add {{OUT}}/content.test.js asserting: pack.json
-          exists, EVERY curriculum insight has >=1 level, and each packed level is solvable+unique via the
-          solver. On a FAIL retry, fix; if the upstream is a PLAYABILITY: WEAK report, RE-BAKE to raise the
-          named weak dimension (e.g. add higher-par levels for the ramp, or levels needing more technique
-          tiers / more decision depth). End "CONTENT: BUILT".
+          insight (revelation certificate). CURRICULUM DISTINCTNESS (non-negotiable — levels must each teach
+          something NEW, never the same puzzle reskinned): compute a CANONICAL LEVEL SIGNATURE of each
+          candidate's PUZZLE ESSENCE (the relative entity formation + relevant terrain + the certified
+          solution's structure) that is INVARIANT under the board's symmetries — translation AND the 8
+          dihedral rotations/reflections — and DEDUP against it: reject any candidate isomorphic to an
+          already-accepted level (a `duplicate-structure` rejection bucket). Generate STRUCTURALLY DISTINCT,
+          ESCALATING content per tier (vary the formation / entity count / chain depth / occlusion / the
+          mechanics involved) — NOT one template with the board edges moved (Enfilade shipped focus-fire 1/2/3
+          as the identical formation on 6x7/6x6/7x6 boards: same solution, zero new teaching — a BUG). If a
+          tier cannot yield the target count of DISTINCT unique puzzles, ship FEWER and report it — NEVER pad
+          with duplicates. Run the baker to write {{OUT}}/pack.json (every insight covered) and
+          {{OUT}}/rejections.json (per-gate census). Add {{OUT}}/content.test.js asserting: pack.json exists,
+          EVERY curriculum insight has >=1 level, each packed level is solvable+unique via the solver, AND
+          every level has a UNIQUE canonical signature (zero isomorphic duplicates). On a FAIL retry, fix; if
+          the upstream is a PLAYABILITY: WEAK report, RE-BAKE to raise the named weak dimension (ramp,
+          technique tiers, decision depth, or curriculum distinctness). End "CONTENT: BUILT".
 
     - id: content_verify
       type: agent
@@ -246,13 +261,22 @@ graph:
           PLAYABILITY GATE. REAL tools, cwd = repo root. FIRST Read graphs/oracleforge/design/playability.md.
           Using the SAME solver/engine the pipeline built, MEASURE the baked pack ({{OUT}}/pack.json): write
           {{OUT}}/playability.js computing — par distribution (ramp), unique-optimal %, greedy/straight-aim
-          regret %, technique-tier spread, pack size vs curriculum, AND the ABSOLUTE on-ramp (easiest par +
-          count of genuinely easy/teaching levels, NOT just the par spread) — and write {{OUT}}/playability.json
-          (the measured report). Add {{OUT}}/playability.test.js (node --test) asserting the PASS thresholds
-          from playability.md §gate (par spans >=3 values; >=50% unique-optimal; greedy regret on >=25% of
-          par>=2 levels; >=2 technique tiers; pack size >= insight count; AND the ON-RAMP FLOOR — an easy
-          band exists: the easiest level is genuinely gentle AND >=2 easy/teaching levels precede the hard
-          ones, so the pack is not a medium→hard cognitive wall). ALSO add a SOUL-NECESSITY check
+          regret %, technique-tier spread, pack size vs curriculum, the ABSOLUTE on-ramp (easiest par +
+          count of genuinely easy/teaching levels, NOT just the par spread), the HARD-CEILING FLOOR (the
+          hardest levels' decision-space proxy — solver explored-node count + board/entity/turn magnitude —
+          so the pack RAMPS to genuinely hard, not just valid), VERBS-LOAD-BEARING (every core SPEC verb
+          matters in the content, e.g. movement is not vestigial), AND CURRICULUM DISTINCTNESS (every level a
+          UNIQUE canonical signature — symmetry+translation-invariant, so no two levels are the same puzzle
+          reskinned — plus per-tier structural VARIETY/escalation) — and write {{OUT}}/playability.json
+          (the measured report, including per-tier distinct-signature counts). Add {{OUT}}/playability.test.js
+          (node --test) asserting the PASS thresholds from playability.md §gate (par spans >=3 values; >=50%
+          unique-optimal; greedy regret on >=25% of par>=2 levels; >=2 technique tiers; pack size >= insight
+          count; the ON-RAMP FLOOR — an easy band exists: the easiest level is genuinely gentle AND >=2
+          easy/teaching levels precede the hard ones; the HARD-CEILING FLOOR — >=2 levels clear an absolute
+          decision-space/search-depth floor so the pack is not eyeball-trivial; VERBS-LOAD-BEARING — no core
+          SPEC verb is vestigial; and CURRICULUM DISTINCTNESS — distinct-signature count == pack size (zero
+          isomorphic duplicates) AND each multi-level tier varies in solution structure, never one puzzle
+          reskinned). ALSO add a SOUL-NECESSITY check
           (playability.md §soul-necessity): read the SPEC's "soul:" technique, disable that one inference rule
           in the solver, re-run the census over the pack, and assert in playability.test.js that >=80% of
           instances become unsolvable OR lose unique-optimal without it (the soul is load-bearing, not
@@ -303,6 +327,11 @@ graph:
           SURFACE (a legend / principles panel / first-run tutorial) that explains the core mechanic. Commit to a
           VISUAL IDENTITY (a deliberate theme, an intentional palette, real typography) — not the default
           engineer's-data-structure look.
+          COMPLETE PROGRESSION FLOW (non-negotiable — no dead-ends): EVERY mode must have a forward path. On a
+          WIN, render an explicit NEXT affordance — in the curriculum/practice band open the next level; in
+          ENDLESS advance to the next level; a tasteful end-of-pack state on the last one. A win screen that
+          strands the player (only a Back-to-menu) is a BUG. Beware false-green tests that assert a same-level
+          "advance turn" helper while the actual next-LEVEL flow is missing — assert the real next-level path.
           NORTH STAR (optional, additive — gracefully no-op if absent): if {{OUT}}/DESIGN_REF.* exists OR the
           idea-spec carries an art:/look: field, treat it as the visual target this shell should honor; if
           neither is present, proceed normally.
@@ -361,12 +390,18 @@ graph:
           (d) GENRE / IDENTITY legible (the AI-SLOP genre-swap, strengthened): with all text labels hidden, the
               rendered board/pieces must still read as A SPECIFIC game with its own visual identity — not a
               generic gray grid that could be any app. Anonymous default UI ⇒ FAIL.
+          (e) PROGRESSION FLOW (no dead-end): actually DRIVE a level to a WIN (use the hint ladder / certified
+              solution to solve it), and confirm the win state renders a working NEXT-level affordance that
+              opens a DIFFERENT next level — in the curriculum AND in endless. A win screen that only offers
+              "back to menu" (no next) ⇒ FAIL. Do not trust a passing test of a same-level "advance-turn"
+              helper; verify the real next-LEVEL transition in the rendered DOM.
           When done: pkill -f "http.server 8137" (best-effort).
         instruction: |
           End with EXACTLY "UX: PASS" if every CRITICAL check holds at all three viewports — including the
           comprehension checks (goal+action on first frame, meaningful-not-raw representation, a teaching
-          surface, genre/identity legible) — else "UX: FAIL" + each failed check with its measured value and
-          viewport (so shell can fix it). A raw engine index shown to the player is an automatic UX: FAIL.
+          surface, genre/identity legible) AND the progression-flow check (a working next-level affordance on
+          win, no dead-end) — else "UX: FAIL" + each failed check with its measured value and viewport (so
+          shell can fix it). A raw engine index shown to the player, or a dead-end win screen, is an automatic UX: FAIL.
 
     - id: ux_gate
       type: loop_counter

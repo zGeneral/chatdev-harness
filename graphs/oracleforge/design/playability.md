@@ -29,6 +29,27 @@ PASS requires ALL of:
   gentle AND ≥ 2 easy levels precede the hard ones. A par *spread* alone does NOT satisfy this. Bleedweave
   shipped `easy:0 / medium:7 / hard:14` (par started at 4) and was a cognitive WALL to a newcomer — its
   parSpan-6 still "passed" the old ramp check. Measure the absolute easiest par + the easy-level count.
+- **hard-CEILING FLOOR (the pack must RAMP to genuinely hard — absolute challenge, not just validity):** the
+  HARDEST levels must clear an ABSOLUTE decision-space / search-depth floor — they must not be eyeball-trivial.
+  Par-spread, uniqueness, and technique-*presence* do NOT bound absolute challenge: a flat field of tiny rooms
+  passes all of them. Enfilade shipped exactly that — every level at the FLOOR of its caps (3×3–7×6 boards,
+  par 1, range-0 units, ~6 options to brute-force by eye) yet "passed" the old gate. Measure a computable
+  proxy from the SHARED solver — its explored-node count (the search must be non-trivial) — PLUS structural
+  magnitude (board area, entity/enemy count, turn budget) at the top tier, and require ≥ 2 levels above the
+  floor. "Worth playing" includes "needs thought," not just "is a valid unique puzzle."
+- **verbs must be LOAD-BEARING (no vestigial mechanics):** every core verb the SPEC defines must actually
+  MATTER in the shipped content. Enfilade defined MOVEMENT as a load-bearing reach constraint, then the baker
+  set unit range = 0 on 8/10 levels — the move verb was dead, the game collapsed to "rotate one enemy, fire."
+  At mid+ tiers, require each core verb to be load-bearing (e.g. a unit must move in the certified solution /
+  forcing range→0 breaks solvability). A vestigial-verb pack is WEAK however clean its other numbers.
+- **curriculum DISTINCTNESS (every level must teach something NEW — never the same puzzle reskinned):** each
+  level must be a DISTINCT puzzle. Compute a CANONICAL signature of the puzzle's essence (relative entity
+  formation + relevant terrain + the certified solution's structure) that is INVARIANT under translation AND
+  the 8 dihedral symmetries (rotations/reflections), and require the pack's distinct-signature count to EQUAL
+  its level count (zero isomorphic duplicates). Within each multi-level tier, the levels must additionally vary
+  in solution structure / escalate, not repeat. Enfilade shipped `focus-fire 1/2/3` as the IDENTICAL 5-enemy
+  formation on 6×7 / 6×6 / 7×6 boards — same solution, zero new teaching — yet each "passed" per-level
+  uniqueness (`countSolutions==1`). Per-level uniqueness does NOT imply inter-level distinctness; gate both.
 - ≥ 50% of levels are unique-optimal;
 - straight-aim/greedy regret on ≥ 25% of the non-trivial (par≥2) levels (real decisions exist);
 - ≥ 2 distinct technique tiers represented across the pack (escalating aha);

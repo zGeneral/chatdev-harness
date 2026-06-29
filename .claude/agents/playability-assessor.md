@@ -20,8 +20,25 @@ Reviewer (correctness) and the Tester (green), and your findings can bounce the 
 - **Impact / payoff** — does every meaningful action produce layered feedback (visual + motion + sound +
   a brief hitstop/screen-feedback)? A hit/score/win with no feedback feels dead. Check the code actually
   *renders* feedback, not just mutates state.
+- **The simulation is ANIMATED, not snapped (high severity for plan-then-run games).** In a place→Run→watch
+  puzzle, the run must PLAY tick-by-tick from the recorded frames. A "Run" that jumps straight to the final
+  frame (e.g. `state.units = frames.at(-1)` then shows the verdict, skipping the in-between) has deleted the
+  core feedback loop — the whole point is *watching* the result resolve. Flag any handler that resolves the
+  outcome without tweening the recorded frames as a HIGH finding (Baffle shipped this exact snap-to-final bug).
+- **Motion is CONTINUOUS, not box-to-box stutter.** Even when the run is tweened, easing each tick
+  independently (velocity → 0 at every cell) and pausing between ticks makes actors hop discretely — it reads
+  as "jumping from box to box". Flag per-cell ease-stops / inter-tick `setTimeout` gaps; the fix is one
+  continuous traversal of the trajectory with sub-tick interpolation (ease once over the whole journey).
+- **Actors have Disney LIFE, not just translation.** Movers/enemies/avatar should squash & stretch,
+  anticipate, follow-through, bank into arcs, idle with a bounce — a character that only changes x/y is a
+  sprite on a conveyor belt. Missing character animation (and N identical actors left un-individuated where
+  colour/form/trail variety is mechanically free) is a FEEL: WEAK finding.
 - **Rhythm / motion** — is movement eased and arced, or stiff linear `+k`/frame? (See
   `docs/grounding/motion-math.md` — flag dead linear motion, missing squash & stretch, no juice.)
+- **Characters & state-encoding have IDENTITY** — actors are designed glyphs (a creature with a
+  body/eye/heading), not bare circles/squares/arrows; and an element's several states differ by hue *and*
+  shape, not three shades of one bar. A board of primitives + near-identical state bars is the "engineer drew
+  the data structure" look — a FEEL: WEAK finding even when every mechanical check passes.
 - **Clarity** — can the player instantly read the goal, the threat, and the legal moves? Is state shown
   by shape/position/text, not color alone?
 
